@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Liquor Website</title>
-    <link rel="stylesheet" href="style.css">
+  
     </head>
 <body>
 
@@ -19,12 +19,22 @@
             <a href=""><div class="nav-option">CATEGORIES</div></a>
             <a href=""><div class="nav-option">WINES</div></a>
         </div>
+<div class="profile-search-cart">
+  <div class="search-container">
+    <img class="search icon" src="src/search-interface-symbol.png" alt="Search">
 
-        <div class="profile-search-cart">
-            <div><a href=""><img class="search icon" src="src/search-interface-symbol.png" alt="Search"></a></div>
-            <div><a href=""><img class="profile icon" src="src/profile-user.png" alt="Profile"></a></div>
-            <div><a href=""><img class="cart icon" src="src/grocery-store.png" alt="Cart"></a></div>
-        </div>
+    <div class="search-bar-expand">
+      <input type="text" placeholder="Search for products...">
+      <button>Search</button>
+    </div>
+  </div>
+
+  <div><a href="#"><img class="profile icon" src="src/profile-user.png" alt="Profile"></a></div>
+  <div><a href="#"><img class="cart icon" src="src/grocery-store.png" alt="Cart"></a></div>
+</div>
+
+
+
     </section>
 
     <section class="feedback-socials">
@@ -56,5 +66,6 @@
 
     <script src="product_data.js"></script> 
     <script src="main.js"></script> 
+    <script src="cart.js"></script> 
 </body>
 </html>

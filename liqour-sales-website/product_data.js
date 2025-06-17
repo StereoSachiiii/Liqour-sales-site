@@ -18,6 +18,11 @@ const whatsNew = [
         name: 'Artisanal Craft Beer Selection',
         image: 'src/new/04.jpg',
         price: 'Rs. 1,800.00'
+    },
+     {
+        name: 'British classics',
+        image: 'src/new/05.jpg',
+        price: 'Rs. 50,000.00'
     }
 ];
 

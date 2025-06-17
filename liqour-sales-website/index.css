@@ -64,6 +64,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-grow: 1;
+    padding-left: 200px;
 }
 
 .nav-options-font a {
@@ -91,16 +92,57 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    width: 150px;
+    width: 400px;
     margin-right: 20px;
     flex-shrink: 0;
+    position: relative;
+}
+.search-container {
+  display: flex;
+  align-items: center;
+  position: relative;
 }
 
-.profile-search-cart div {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+.search-bar-expand {
+  display: flex;
+  align-items: center;
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-right: 10px; 
+  transition: width 0.3s ease, opacity 0.3s ease;
 }
+
+
+.search-container:hover .search-bar-expand {
+  width: 300px;
+  opacity: 1;
+}
+
+.search-bar-expand input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px 0 0 4px;
+  outline: none;
+  font-size: 14px;
+  width: 150px;
+}
+
+.search-bar-expand button {
+  padding: 5px 10px;
+  border: none;
+  background-color: #901E3E;
+  width: 70px;
+  height: 30px;
+  color: white;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+
 
 .icon {
     width: 25px;
@@ -596,4 +638,28 @@ body {
     .new-item {
         width: calc(100% - 40px);
     }
+}
+.price-add-to-cart {
+    position: relative;
+}
+
+.add-animation {
+ position: absolute;   
+ top:-30px;
+ left:20px;
+ color: green;
+ animation: addedToCart 2s ease-out  forwards;
+
+}
+@keyframes addedToCart  {
+    0%{
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+
+    }
+    
 }
