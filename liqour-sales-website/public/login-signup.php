@@ -11,27 +11,30 @@
   <div class="main-box" id="mainBox">
 
     <div class="form-box sign-up-box">
-      <form>
-        <h1>Create Account</h1>
+      <form action="../Backend/process-signup.php" method="POST">
+
+         <h1>Create Account</h1>
         <p>Register to unlock premium spirits</p>
         <input type="text" name="name" placeholder="Full Name" />
         <input type="password"  name="password" placeholder="password" />
         <input type="password"  name = "password" placeholder=" Confirm Password" />
         <button>Sign Up</button>
-      </form>
+
+      </form>     
     </div>
 
    
     <div class="form-box sign-in-box">
-      <form>
-        <h1>Sign In</h1>
+      <form action="../Backend/process-login.php" method="POST">
+
+       <h1>Sign In</h1>
         <p>Get back to your shopping!</p>
         <input type="username" name="username"  placeholder="Username" />
-        <input type="password" name="password" placeholder="Password" />
-       
+        <input type="password" name="password" placeholder="Password" />       
         <button class="sign-in-button">Sign In</button>
-      </form>
-    </div>
+
+      </form>     
+   </div>
 
     <div class="switch-panel">
       <div class="panel panel-left">
