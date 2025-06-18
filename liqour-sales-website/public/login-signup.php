@@ -15,10 +15,10 @@
 
          <h1>Create Account</h1>
         <p>Register to unlock premium spirits</p>
-        <input type="text" name="name" placeholder="Full Name" />
+        <input type="text" name="name" placeholder=" Name" />
         <input type="password"  name="password" placeholder="password" />
         <input type="password"  name = "password" placeholder=" Confirm Password" />
-        <button>Sign Up</button>
+        <button class="sign-up-button">Sign Up</button>
 
       </form>     
     </div>

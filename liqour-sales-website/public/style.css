@@ -95,6 +95,14 @@ button {
   cursor: pointer;
   transition: 0.3s ease;
   letter-spacing: 0.5px;
+  
+}
+.sign-up-button{
+  margin-left: 100px;
+}
+
+.sign-in-button{
+  margin-left: 100px;
 }
 
 button:hover {
