@@ -11,21 +11,18 @@ if (isset($_POST['username'], $_POST['password'])) {
     }
 
     $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_SPECIAL_CHARS);
-    $password = $_POST['password'];
+    $password = $_POST['password']; 
 
-    // Prepare the SQL statement
-    $stmt = $conn->prepare("SELECT * FROM users WHERE name = ?");
-    $stmt->bind_param("s", $username); // "s" means string
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $sql = "SELECT * FROM users WHERE name = '$username'";
+    $res = mysqli_query($conn, $sql);
 
-    if ($result && $result->num_rows === 1) {
-        $line = $result->fetch_assoc();
+    if ($res && mysqli_num_rows($res) === 1) {
+        $line = mysqli_fetch_assoc($res);
 
         $passwordCheck = password_verify($password, $line['password_hash']);
         $isAdmin = $line['is_admin'];
 
-        if ($passwordCheck && $isAdmin) {
+        if ($line['name'] == $username && $passwordCheck && $isAdmin) {
             $_SESSION["login"] = "success";
             $_SESSION["user_id"] = $line['id'];
             $_SESSION["username"] = $line['name'];
@@ -44,12 +41,9 @@ if (isset($_POST['username'], $_POST['password'])) {
         exit();
     }
 
-   
-
 } else {
     $_SESSION['error'] = "Please provide all the details.";
     header("Location: ../public/login-signup.php");
     exit();
-     
 }
 ?>

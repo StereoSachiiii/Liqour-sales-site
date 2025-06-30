@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Liquor Website</title>
-  
     </head>
 <body>
 
@@ -33,8 +32,6 @@
   <div><a href="#"><img class="cart icon" src="src/grocery-store.png" alt="Cart"></a></div>
 </div>
 
-
-
     </section>
 
     <section class="feedback-socials">
@@ -47,11 +44,11 @@
         <div class="feedback-text">
             <p>Take a look at our reviews!</p>
         </div>
-        <DIV>
-            <a href=""><div><P>News</P></div></a>
+        <div>
+            <a href=""><div><p>News</p></div></a>
             <a href=""><div><p>Contact us</p></div></a>
             <a href=""><div><p>Delivery</p></div></a>
-        </DIV>
+        </div>
     </section>
 
     <?php include('slider.html');  ?>
