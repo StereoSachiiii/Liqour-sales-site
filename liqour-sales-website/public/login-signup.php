@@ -1,3 +1,6 @@
+<?php session_start();?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,10 +19,11 @@
          <h1>Create Account</h1>
         <p>Register to unlock premium spirits</p>
         <input type="text" name="name" placeholder=" Name" />
+        <input type="text" name="email" placeholder="email"/>
+        <input type="text" name="address" placeholder="address">
         <input type="password"  name="password" placeholder="password" />
-        <input type="password"  name = "password" placeholder=" Confirm Password" />
+        <input type="text" name="phoneNumber" placeholder="mobile number"/>
         <button class="sign-up-button">Sign Up</button>
-
       </form>     
     </div>
 
@@ -32,6 +36,9 @@
         <input type="username" name="username"  placeholder="Username" />
         <input type="password" name="password" placeholder="Password" />       
         <button class="sign-in-button">Sign In</button>
+        <p class="err">
+          <?php echo $_SESSION["error"]?>
+        </p>
 
       </form>     
    </div>
@@ -63,6 +70,16 @@
     signInBtn.addEventListener("click", () => {
       mainBox.classList.remove("active");
     });
+
+
+
+
+
+
+
+
+
+
   </script>
 </body>
 </html>

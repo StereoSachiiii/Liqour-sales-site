@@ -4,6 +4,10 @@
   box-sizing: border-box;
   font-family: 'Segoe UI', sans-serif;
 }
+.err{
+font-size: small;
+text-align: center;
+}
 
 body {
   background: linear-gradient(to right, #F5F5F5, #E8E8E8);

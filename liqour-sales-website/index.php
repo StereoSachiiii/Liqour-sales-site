@@ -57,9 +57,10 @@
         <p class="title-text">What's New?</p>
         <div class="new-arrivals">
             </div>
+            <button class="order-btn">Order</button>
     </div>
 
-    <?php  ?>
+    
 
     <script src="product_data.js"></script> 
     <script src="main.js"></script> 
