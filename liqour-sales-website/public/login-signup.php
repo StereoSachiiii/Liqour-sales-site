@@ -37,7 +37,10 @@
         <input type="password" name="password" placeholder="Password" />       
         <button class="sign-in-button">Sign In</button>
         <p class="err">
-          <?php echo $_SESSION["error"]?>
+          <?php
+          if(isset($_SESSION['error'])){
+
+           echo $_SESSION["error"];}?>
         </p>
 
       </form>     

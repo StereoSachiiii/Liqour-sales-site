@@ -41,7 +41,7 @@ if (isset($_POST['password']) && strlen($_POST['password']) > 8) {
                 if ($res->num_rows === 1) {
                     $line = $res->fetch_assoc();
 
-                    $_SESSION['user'] = $line['name'];
+                    $_SESSION['username'] = $line['name'];
                     $_SESSION['userId'] = $line['id'];
                     $_SESSION['signup'] = "success";
                     $_SESSION['is_admin'] = false;

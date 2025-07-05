@@ -1,4 +1,8 @@
-<?php include('header.php'); ?>
+<?php include('header.php');
+
+
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,8 +32,17 @@
     </div>
   </div>
 
-  <div><a href="#"><img class="profile icon" src="src/profile-user.png" alt="Profile"></a></div>
-  <div><a href="#"><img class="cart icon" src="src/grocery-store.png" alt="Cart"></a></div>
+  <div class="profile-container">
+    <a href="#"><img class="profile icon" src="src/profile-user.png" alt="Profile"></a>
+    <div  class="profile-expand">
+        
+           <p>logout</p> 
+           <p>Account details</p>
+        
+    </div>
+</div>
+
+  <div  class="cart-container"><a href="#"><img class="cart icon" src="src/grocery-store.png" alt="Cart"></a></div>
 </div>
 
     </section>
@@ -57,7 +70,8 @@
         <p class="title-text">What's New?</p>
         <div class="new-arrivals">
             </div>
-            <button class="order-btn">Order</button>
+                        <button class="order-btn">Order</button>
+
     </div>
 
     
