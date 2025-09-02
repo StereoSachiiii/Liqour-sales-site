@@ -1,4 +1,10 @@
 <?php
+if(empty($_SERVER['HTTPS'])||$_SERVER["HTTPS"]=='off'){
+    $secureUrl="https://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+    header("Location:$secureUrl");
+    exit(); 
+}
+
 include('sql-config.php');
 session_start();
 
@@ -15,16 +21,20 @@ if (isset($_POST['username'], $_POST['password'])) {
         $user = $res->fetch_assoc();
 
         if (password_verify($password, $user['password_hash'])) {
-            if ((int)$user['is_admin'] === 0) {
-                $_SESSION["login"] = "success";
-                $_SESSION["userId"] = $user['id'];
-                $_SESSION["username"] = $user['name'];
-                $_SESSION["is_admin"] = false;
-
-                header("Location: ../index.php");
+            $_SESSION["login"] = "success";
+            $_SESSION["userId"] = $user['id'];
+            $_SESSION["username"] = $user['name'];
+            
+         
+            if ((int)$user['is_admin'] === 1) {
+                $_SESSION["is_admin"] = true;
+                $_SESSION['Admin'] = "Admin login successful.";
+                header("Location: ../Backend/manage-site.php");
                 exit();
             } else {
-                $_SESSION['error'] = "Admins must log in through the admin portal.";
+                $_SESSION["is_admin"] = false;
+                header("Location: ../index.php");
+                exit();
             }
         } else {
             $_SESSION['error'] = "Incorrect password.";

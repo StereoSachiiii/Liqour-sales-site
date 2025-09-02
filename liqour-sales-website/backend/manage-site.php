@@ -1,16 +1,62 @@
+<?php 
+// Force HTTPS
+if(empty($_SERVER['HTTPS']) || $_SERVER["HTTPS"] == 'off'){
+    $secureUrl = "https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+    header("Location: $secureUrl");
+    exit();
+}
 
-
-<?php /*
 session_start();
+include("sql-config.php");
 
+// Check authentication
 if (
-    !isset($_SESSION['login'], $_SESSION['user_id'], $_SESSION['username'], $_SESSION['is_admin']) ||
+    !isset($_SESSION['login'], $_SESSION['userId'], $_SESSION['username'], $_SESSION['is_admin']) ||
     $_SESSION['login'] !== 'success'
 ) {
     header('Location: /process-login.php');
     exit();
 }
-    */
+
+// Get statistics (using your existing table structure)
+$stats = [];
+
+// Total Users
+$stmt = $conn->prepare("SELECT COUNT(*) as count FROM users");
+$stmt->execute();
+$stats['users'] = $stmt->get_result()->fetch_assoc()['count'];
+
+// Total Orders (assuming you have an orders table)
+try {
+    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM orders");
+    $stmt->execute();
+    $stats['orders'] = $stmt->get_result()->fetch_assoc()['count'];
+} catch (Exception $e) {
+    $stats['orders'] = 0;
+}
+
+// Total Revenue (assuming you have an orders table with total_amount field)
+try {
+    $stmt = $conn->prepare("SELECT COALESCE(SUM(total_amount), 0) as revenue FROM orders WHERE status = 'completed'");
+    $stmt->execute();
+    $stats['revenue'] = $stmt->get_result()->fetch_assoc()['revenue'];
+} catch (Exception $e) {
+    $stats['revenue'] = 0;
+}
+
+// Total Reviews (assuming you have a reviews table)
+try {
+    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM reviews");
+    $stmt->execute();
+    $stats['reviews'] = $stmt->get_result()->fetch_assoc()['count'];
+} catch (Exception $e) {
+    $stats['reviews'] = 0;
+}
+
+// Total Stock Items
+$stmt = $conn->prepare("SELECT COUNT(*) as count FROM liqours");
+$stmt->execute();
+$stats['stock'] = $stmt->get_result()->fetch_assoc()['count'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -91,6 +137,8 @@ if (
       border-radius: 4px;
       cursor: pointer;
       font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
     }
     
     .btn:hover {
@@ -128,6 +176,21 @@ if (
       background: #f8f8f8;
       padding: 15px;
       border-radius: 6px;
+      text-align: center;
+    }
+    
+    .stat-number {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .delete {
+      background: #dc3545;
+    }
+    
+    .delete:hover {
+      background: #c82333;
     }
     
     @media (max-width: 768px) {
@@ -161,18 +224,33 @@ if (
         <h2>Statistics Overview</h2>
       </div>
       <div class="section-content stats">
-        <div class="stat-card">Total Users</div>
-        <div class="stat-card">Total Orders</div>
-        <div class="stat-card">Total Revenue</div>
-        <div class="stat-card">Total Reviews</div>
-        <div class="stat-card">Total Stock Items</div>
+        <div class="stat-card">
+          <div class="stat-number"><?php echo number_format($stats['users']); ?></div>
+          <div>Total Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number"><?php echo number_format($stats['orders']); ?></div>
+          <div>Total Orders</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">$<?php echo number_format($stats['revenue'], 2); ?></div>
+          <div>Total Revenue</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number"><?php echo number_format($stats['reviews']); ?></div>
+          <div>Total Reviews</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number"><?php echo number_format($stats['stock']); ?></div>
+          <div>Total Stock Items</div>
+        </div>
       </div>
     </section>
 
     <section id="categories" class="section">
       <div class="section-header">
         <h2>Liqour Categories</h2>
-        <button class="btn">Add Category</button>
+        <a href="add-liqour.php"><button class="btn">Add Category</button></a>
       </div>
       <div class="section-content">
         <table class="table">
@@ -183,7 +261,31 @@ if (
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody></tbody>
+          <tbody>
+            <?php 
+              $sqlCategories = "SELECT * FROM liqour_categories";
+              $stmt = $conn->prepare($sqlCategories);
+              $stmt->execute();
+              $res = $stmt->get_result();
+              
+              if($res->num_rows > 0){
+                while($row = $res->fetch_assoc()){
+                   $category_id = htmlspecialchars($row['liqour_category_id']);
+                   $name = htmlspecialchars($row['name']);
+                  
+                   echo "
+                   <tr>
+                    <td>{$category_id}</td>
+                    <td>{$name}</td>
+                    <td>
+                    <a href='update-category.php?id={$category_id}'><button class='btn'>Update</button></a>
+                    <button class='btn delete'>Delete</button>
+                    </td>
+                  </tr>";                                   
+                }
+              }
+            ?>
+          </tbody>
         </table>
       </div>
     </section>
@@ -191,7 +293,7 @@ if (
     <section id="liqours" class="section">
       <div class="section-header">
         <h2>Liqours</h2>
-        <button class="btn">Add Liqour</button>
+       <a href="add-liqour.php"> <button class="btn">Add Liqour</button></a>
       </div>
       <div class="section-content">
         <table class="table">
@@ -206,7 +308,40 @@ if (
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody></tbody>
+          <tbody>
+            <?php 
+            $sqlLiqours = "SELECT * FROM liqours";
+            $stmt = $conn->prepare($sqlLiqours);
+            $stmt->execute();
+            $res = $stmt->get_result();
+
+            if($res->num_rows > 0){
+              while($row = $res->fetch_assoc()){
+               
+                $id = htmlspecialchars($row['liqour_id']);
+                $name = htmlspecialchars($row['name']);
+                $desc = htmlspecialchars($row['description']);
+                $price = htmlspecialchars($row['price']);
+                $category = htmlspecialchars($row['category_id']); 
+                $image = htmlspecialchars($row['image_url']);
+                echo "<tr>
+                        <td>{$id}</td>
+                        <td>{$name}</td>
+                        <td>{$desc}</td>
+                        <td>\${$price}</td>
+                        <td>{$category}</td>
+                        <td>{$image}</td>
+                        <td>
+                           <a href='update-liqour.php?id={$id}'><button class='btn'>Update</button></a>
+                         <button class='btn delete'>Delete</button>
+                        </td>
+                      </tr>";
+              }
+            } else {
+              echo "<tr><td colspan='7'>No liquors found.</td></tr>";
+            }
+            ?>
+          </tbody>
         </table>
       </div>
     </section>

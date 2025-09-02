@@ -121,9 +121,8 @@ button:hover {
   height: 100%;
   width: 50%;
   background: linear-gradient(135deg, #706F6F, #5A5A5A, #B8860B);
-  /* Use flex to stack panels, not side-by-side for this approach */
   display: flex;
-  flex-direction: column; /* Stack children vertically */
+  flex-direction: column; 
   justify-content: center;
   text-align: center;
   padding: 0 40px;
