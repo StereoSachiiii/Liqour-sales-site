@@ -18,13 +18,16 @@ $result = $stmt->get_result();
 if ($result->num_rows === 0) die("Category not found.");
 $category = $result->fetch_assoc();
 
+$error = '';
+$success = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name']);
     $image_path = $category['image_url'];
 
     // Handle image upload
     if (!empty($_FILES['image_file']['name'])) {
-        $targetDir = "../../public/src/category images/";
+        $targetDir = "../../public/src/category-images/";
         if (!is_dir($targetDir)) mkdir($targetDir, 0755, true);
 
         $fileName = basename($_FILES["image_file"]["name"]);
@@ -37,21 +40,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Only JPG, JPEG, PNG, GIF files are allowed.";
         } else {
             if (move_uploaded_file($_FILES["image_file"]["tmp_name"], $targetFile)) {
-                $image_path = "public/src/category images/" . $fileName; // save relative path
+                $image_path = "public/src/category-images/" . $fileName; // relative path
             } else {
                 $error = "Failed to upload image.";
             }
         }
     }
 
-    if (!isset($error)) {
+    if (empty($error)) {
         $update_stmt = $conn->prepare("UPDATE liqour_categories SET name=?, image_url=? WHERE liqour_category_id=?");
         $update_stmt->bind_param("ssi", $name, $image_path, $cid);
-        $update_stmt->execute();
-
-        if ($update_stmt->affected_rows >= 0) { // 0 affected rows if no changes
-            header("Location: ../manage-dashboard.php#categories");
-            exit();
+        if ($update_stmt->execute()) {
+            $success = "Category updated successfully!";
+            // Update current values for preview
+            $category['name'] = $name;
+            $category['image_url'] = $image_path;
         } else {
             $error = "Update failed.";
         }
@@ -82,6 +85,8 @@ body { font-family: 'Inter', sans-serif; background: #f8f9fa; margin:0; padding:
 .submit-btn { width:100%; background:#212529; color:white; padding:0.875rem 1.5rem; cursor:pointer; border:none; border-radius:6px; font-size:1rem; font-weight:600; transition: all 0.2s; margin-top:1rem; }
 .submit-btn:hover { background:#343a40; transform:translateY(-1px); }
 .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; padding:1rem; border-radius:6px; margin-top:1rem; font-size:0.875rem; }
+.alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; padding:1rem; border-radius:6px; margin-top:1rem; font-size:0.875rem; }
+.preview-img { max-width:150px; display:block; margin-top:10px; border-radius:8px; }
 </style>
 </head>
 <body>
@@ -94,25 +99,40 @@ body { font-family: 'Inter', sans-serif; background: #f8f9fa; margin:0; padding:
             <h1>Update Category</h1>
             <p>Edit category name or image</p>
         </div>
-        <form action="update-category.php?id=<?= htmlspecialchars($cid) ?>" method="POST" enctype="multipart/form-data">
+
+        <?php if($error): ?>
+            <div class="alert-error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+        <?php if($success): ?>
+            <div class="alert-success"><?= htmlspecialchars($success) ?></div>
+        <?php endif; ?>
+
+        <form action="" method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="name">Category Name</label>
                 <input type="text" name="name" value="<?= htmlspecialchars($category['name']) ?>" required>
             </div>
             <div class="form-group">
                 <label for="image_file">Category Image</label>
-                <input type="file" name="image_file" accept="image/*">
+                <input type="file" name="image_file" accept="image/*" onchange="previewImage(event)">
                 <?php if(!empty($category['image_url'])): ?>
-                    <p>Current: <img src="../../<?= htmlspecialchars($category['image_url']) ?>" alt="" style="max-width:100px; display:block; margin-top:5px;"></p>
+                    <img id="preview" src="../../<?= htmlspecialchars($category['image_url']) ?>" class="preview-img" alt="Category Image">
+                <?php else: ?>
+                    <img id="preview" class="preview-img" style="display:none;" alt="Preview">
                 <?php endif; ?>
             </div>
             <button type="submit" class="submit-btn">UPDATE CATEGORY</button>
-            <?php if(isset($error)): ?>
-                <div class="alert-error"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
         </form>
     </div>
 </div>
+
+<script>
+function previewImage(event) {
+    const preview = document.getElementById('preview');
+    preview.src = URL.createObjectURL(event.target.files[0]);
+    preview.style.display = 'block';
+}
+</script>
 
 </body>
 </html>

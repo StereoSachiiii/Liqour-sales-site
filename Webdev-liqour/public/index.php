@@ -23,9 +23,8 @@ include('../Backend/sql-config.php');
   <div class="header-strip">Welcome to LiquorStore! Free delivery on orders over $50</div>
 
   <nav class="nav-bar">
-    <div class="logo-container">
-      <img src="src\icons\icon.svg" alt="LiquorStore Logo">
-    </div>
+          <a href="index.php"><div class="logo-container"><img src="src\icons\icon.svg" alt="LiquorStore Logo">    </div></a>
+
     <div class="nav-options-container nav-options-font">
       <div class="nav-option"><a href="#new-arrivals">NEW ARRIVALS</a></div>
       <div class="nav-option"><a href="#liquor">LIQUOR</a></div>
@@ -37,17 +36,17 @@ include('../Backend/sql-config.php');
         <div class="profile">👤</div>
         <div class="profile-expand">
             <p><a href="profile.php">Profile</a></p>
-            <p><a href="#" onclick="logout()">Logout</a></p>
+<p><a href="#" onclick="showLogoutModal()">Logout</a></p>
             <p><a href="my-orders.php">My Orders</a></p>
         </div>
       </div>
 
-      <div class="search-container">
-        <div class="search-bar-expand">
-          <input type="text" id="search-box" placeholder="Search products...">
-          <button onclick="searchProducts()">Search</button>
-        </div>
-      </div>
+           <div class="nav-search-icon" style="cursor:pointer; margin-left:15px;" onclick="scrollToLiquorSearch()">
+  🔍
+</div>
+
+
+
 
       <div class="cart-container cart-link">
         <a href="cart.php"><div class="cart">🛒</div></a>
@@ -95,7 +94,8 @@ include('../Backend/sql-config.php');
     <h2 class="title-text">✨ New Arrivals</h2>
     <div class="new-arrivals">
     <?php 
-    $sql = "SELECT * FROM liqours ORDER BY liqour_id DESC LIMIT 6";
+    $sql = "SELECT * FROM liqours WHERE is_active = 1 ORDER BY liqour_id DESC LIMIT 6";
+
     $result = $conn->query($sql);
     if ($result && $result->num_rows > 0) {
       while ($row = $result->fetch_assoc()) {
@@ -103,10 +103,11 @@ include('../Backend/sql-config.php');
           <div class='new-item'>
               <div class='image-container' style='background-image:url({$row['image_url']})'></div>
               <div class='description'>{$row['name']}</div>
-              <div class='price-add-to-cart'>
-                <div class='product-price'>$".$row['price']."</div>
-                <button class='add-to-cart-btn' onclick='addToCart(\"{$row['liqour_id']}\", \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>Add to Cart</button>
-              </div>
+             <div class='price-add-to-cart'>
+    <div class='product-price'>$".$row['price']."</div>
+    <button class='add-to-cart-btn' onclick='addToCart(\"{$row['liqour_id']}\", \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>Add to Cart</button>
+    <button class='view-product-btn' onclick='viewProduct(".$row['liqour_id'].")'>View Product</button>
+</div>
                               <button class='add-to-cart-btn' onclick='viewReviews(\"{$row['liqour_id']}\")' style='background:#666; margin-top:5px;'>View Reviews</button>
 
           </div>";
@@ -121,11 +122,18 @@ include('../Backend/sql-config.php');
 
   <section class="new" id="liquor">
     <h2 class="title-text">🥃 Liquor</h2>
+    <div class="nav-option">
+  <input type="text" id="liquor-search" placeholder="Search liquor..." style="padding:5px 10px; border-radius:5px; border:1px solid #ccc; width:180px; margin-left:10px;">
+  <button onclick="searchLiquorAJAX()" style="padding:5px 10px; background:#8B4513; color:white; border:none; border-radius:5px; margin-left:5px;">Search</button>
+</div>
+
     <div class="new-arrivals">
     <?php
     $sql = "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name 
-            FROM liqours l
-            JOIN liqour_categories c ON l.category_id = c.liqour_category_id";
+        FROM liqours l
+        JOIN liqour_categories c ON l.category_id = c.liqour_category_id
+        WHERE l.is_active = 1 AND c.is_active = 1";
+
     $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
@@ -135,13 +143,10 @@ include('../Backend/sql-config.php');
                 <div class='image-container' style='background-image:url({$row['image_url']})'></div>
                 <div class='description'>{$row['name']} ({$row['category_name']})</div>
                 <div class='price-add-to-cart'>
-                  <div class='product-price'>\${$row['price']}</div>
-                  <button class='add-to-cart-btn' 
-                          onclick='addToCart(\"{$row['liqour_id']}\", \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>
-                      Add to Cart
-                  </button>
-                   
-                </div>
+    <div class='product-price'>$".$row['price']."</div>
+    <button class='add-to-cart-btn' onclick='addToCart(\"{$row['liqour_id']}\", \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>Add to Cart</button>
+    <button class='view-product-btn' onclick='viewProduct(".$row['liqour_id'].")'>View Product</button>
+</div>
                                   <button class='add-to-cart-btn' onclick='viewReviews(\"{$row['liqour_id']}\")' style='background:#666; margin-top:5px;'>View Reviews</button>
 
             </div>";
@@ -159,12 +164,14 @@ include('../Backend/sql-config.php');
     <div class="new-arrivals">
     <?php
     $sql = "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name, SUM(s.quantity) AS total_stock
-            FROM liqours l
-            JOIN liqour_categories c ON l.category_id = c.liqour_category_id
-            LEFT JOIN stock s ON l.liqour_id = s.liqour_id
-            GROUP BY l.liqour_id, l.name, l.price, l.image_url, c.name
-            ORDER BY total_stock DESC
-            LIMIT 6";
+        FROM liqours l
+        JOIN liqour_categories c ON l.category_id = c.liqour_category_id
+        LEFT JOIN stock s ON l.liqour_id = s.liqour_id AND s.is_active = 1
+        WHERE l.is_active = 1 AND c.is_active = 1
+        GROUP BY l.liqour_id, l.name, l.price, l.image_url, c.name
+        ORDER BY total_stock DESC
+        LIMIT 6";
+
     $result = $conn->query($sql);
 
     if ($result && $result->num_rows > 0) {
@@ -174,9 +181,10 @@ include('../Backend/sql-config.php');
                 <div class='image-container' style='background-image:url({$row['image_url']})'></div>
                 <div class='description'>{$row['name']} ({$row['category_name']})</div>
                 <div class='price-add-to-cart'>
-                    <div class='product-price'>\${$row['price']}</div>
-                    <button class='add-to-cart-btn' onclick='addToCart(\"{$row['liqour_id']}\", \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>Add to Cart</button>
-                </div>
+    <div class='product-price'>$".$row['price']."</div>
+    <button class='add-to-cart-btn' onclick='addToCart(\"{$row['liqour_id']}\", \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>Add to Cart</button>
+    <button class='view-product-btn' onclick='viewProduct(".$row['liqour_id'].")'>View Product</button>
+</div>
                 <div style='width: 100%; margin-top: 8px;'>
                     <button class='add-to-cart-btn' onclick='viewReviews(\"{$row['liqour_id']}\")' style='background:#666; width: 100%;'>View Reviews</button>
                 </div>
@@ -229,7 +237,14 @@ include('../Backend/sql-config.php');
     ?>
     </div>
 </section>
-
+        <div id="logoutModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+  <div style="background:#fff; padding:20px; border-radius:10px; text-align:center; min-width:300px;">
+    <h3>Confirm Logout</h3>
+    <p>Are you sure you want to logout?</p>
+    <button onclick="logoutNow()" style="padding:8px 16px; background:#8B4513; color:white; border:none; border-radius:5px; margin-right:10px;">Yes</button>
+    <button onclick="closeLogoutModal()" style="padding:8px 16px; background:#ccc; color:#333; border:none; border-radius:5px;">Cancel</button>
+  </div>
+</div>
 
   <footer class="feedback-socials" style="justify-content:center;">
     <p>© 2025 LiquorStore. All rights reserved.</p>
@@ -269,13 +284,43 @@ include('../Backend/sql-config.php');
     alert("Search for: " + query);
   }
 
-  
+  function showLogoutModal() {
+    document.getElementById('logoutModal').style.display = 'flex';
+}
 
-  function logout() {
-    if(confirm("Are you sure you want to logout?")) {
-window.location.href = "../Backend/auth/logout.php";
-    }
-  }
+function closeLogoutModal() {
+    document.getElementById('logoutModal').style.display = 'none';
+}
+function scrollToLiquorSearch() {
+    const searchInput = document.getElementById('liquor-search');
+    searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Highlight the input box briefly
+    searchInput.style.transition = 'all 0.5s';
+    searchInput.style.backgroundColor = '#fff3cd';
+    searchInput.style.borderColor = '#8B4513';
+    setTimeout(() => {
+        searchInput.style.backgroundColor = '';
+        searchInput.style.borderColor = '';
+    }, 1500);
+    
+    searchInput.focus();
+}
+function viewProduct(liquorId) {
+    // Redirect to single product page with ID
+    window.location.href = 'product.php?liqour_id=' + liquorId;
+}
+
+
+function logoutNow() {
+    window.location.href = "../Backend/auth/logout.php";
+}
+
+// Optional: close modal if clicked outside
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById('logoutModal');
+    if(e.target === modal) modal.style.display = 'none';
+});
 
   function viewReviews(liquorId) {
       window.location.href = 'feedback.php?liqour_id=' + liquorId;
@@ -320,6 +365,40 @@ function addToCart(id, name, price, img) {
 
     showToast(`${name} added to cart 🛒`);
 }
+function searchLiquorAJAX() {
+    const query = document.getElementById('liquor-search').value.trim();
+    if(!query) return;
+
+    fetch(`search-liqour.php?query=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+            const container = document.querySelector('#liquor .new-arrivals');
+            container.innerHTML = ''; // clear old results
+            
+            if(data.length === 0) {
+                container.innerHTML = '<p>No products found.</p>';
+                return;
+            }
+
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'new-item';
+                div.innerHTML = `
+    <div class='image-container' style='background-image:url(${item.image_url})'></div>
+    <div class='description'>${item.name} (${item.category_name})</div>
+    <div class='price-add-to-cart'>
+        <div class='product-price'>$${item.price}</div>
+        <button class='add-to-cart-btn' onclick='addToCart("${item.liqour_id}", "${item.name}", ${item.price}, "${item.image_url}")'>Add to Cart</button>
+        <button class='view-product-btn' onclick='viewProduct(${item.liqour_id})'>View Product</button>
+    </div>
+`;
+
+                container.appendChild(div);
+            });
+        })
+        .catch(err => console.error(err));
+}
+
 
 
 </script>

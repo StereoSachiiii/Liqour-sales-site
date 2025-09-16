@@ -78,7 +78,7 @@ strong {
 </head>
 <body>
 <div class="container">
-    <a href="../manage-dashboard.php#users" class="back-btn">← Back to Users</a>
+    <a href="../manage-dashboard.php#users" class="back-btn">← Back to Dashboard</a>
     <h2>View User: <?= htmlspecialchars($user['name']) ?></h2>
 
     <p><strong>ID:</strong> <?= $user['id'] ?></p>

@@ -1,0 +1,72 @@
+
+C:.
+|   index.css
+|   localhost+2-key.pem
+|   localhost+2.pem
+|   project-structure.txt
+|   README.md
+|   schema.sql
+|   
++---Backend
+|   |   adminlogin.php
+|   |   manage-dashboard.php
+|   |   saveCart.php
+|   |   sql-config.php
+|   |   
+|   +---auth
+|   |       create-first-admin.php
+|   |       login.php
+|   |       logout.php
+|   |       signup.php
+|   |       
+|   +---category
+|   |       add.php
+|   |       delete.php
+|   |       update.php
+|   |       view.php
+|   |       
+|   +---liqour
+|   |       add.php
+|   |       delete.php
+|   |       get.php
+|   |       update.php
+|   |       view.php
+|   |       
+|   +---order
+|   |       delete.php
+|   |       update.php
+|   |       view.php
+|   |       
+|   +---review
+|   |       review-delete.php
+|   |       
+|   +---stock
+|   |       delete.php
+|   |       move.php
+|   |       update.php
+|   |       
+|   \---warehouse
+|           add.php
+|           delete.php
+|           update.php
+|           
++---public
+|   |   cart.php
+|   |   category.php
+|   |   feedback.php
+|   |   header.php
+|   |   index.php
+|   |   login-signup.php
+|   |   main.js
+|   |   my-orders.php
+|   |   profile.php
+|   |   user-reviews.php
+|   |   
+|   +---css
+|   |       style.css
+|   |       
+|   \---js
+\---src
+    +---product-images
+    +---slider
+    \---user-profiles

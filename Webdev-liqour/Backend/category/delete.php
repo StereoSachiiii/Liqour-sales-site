@@ -2,87 +2,71 @@
 session_start();
 include("../sql-config.php");
 
+// Admin check
 if (!isset($_SESSION['login']) || $_SESSION['login'] !== 'success') {
     header('Location: ../adminlogin.php');
     exit();
 }
 
-if (isset($_GET['id'])) {
-    $cid = $_GET['id'];
+if (!isset($_GET['id'])) {
+    header("Location: ../manage-dashboard.php");
+    exit();
+}
 
-    // Check if category has products
-    $sqlCheck = "SELECT COUNT(*) FROM liqours WHERE category_id = ?";
-    $stmtCheck = $conn->prepare($sqlCheck);
-    $stmtCheck->bind_param('i', $cid);
-    $stmtCheck->execute();
-    $stmtCheck->bind_result($count);
-    $stmtCheck->fetch();
-    $stmtCheck->close();
+$cid = intval($_GET['id']);
+$hardDelete = isset($_GET['hard']) && $_GET['hard'] == 1;
 
-    // Determine if hard delete is requested
-    $hardDelete = isset($_GET['hard']) && $_GET['hard'] == 1;
+// Check if category has active products
+$stmtCheck = $conn->prepare("SELECT COUNT(*) FROM liqours WHERE category_id = ?");
+$stmtCheck->bind_param("i", $cid);
+$stmtCheck->execute();
+$stmtCheck->bind_result($productCount);
+$stmtCheck->fetch();
+$stmtCheck->close();
 
-    if ($count > 0 && !$hardDelete) {
-        // Cannot delete if products exist, unless hard delete
-        ?>
-        <html>
-        <head>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    background: white;
-                    color: black;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    margin: 0;
-                }
-                .error {
-                    border: 1px solid black;
-                    padding: 30px;
-                    background: white;
-                    text-align: center;
-                }
-                a {
-                    color: black;
-                    text-decoration: underline;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="error">
-                <p>Cannot delete category: it has products assigned.</p>
-                <a href="../manage-dashboard.php">Back to Dashboard</a>
-            </div>
-        </body>
-        </html>
-        <?php
-        exit();
-    }
+// Show alert if soft delete not allowed
+if ($productCount > 0 && !$hardDelete) {
+    echo "<script>
+        alert('Cannot delete category: it has active products. Use hard delete if intended.');
+        window.location.href = '../manage-dashboard.php';
+    </script>";
+    exit();
+}
 
+// Attempt delete
+try {
     if ($hardDelete) {
-        // Hard delete
-        $sqlDel = "DELETE FROM liqour_categories WHERE liqour_category_id = ?";
+        $sql = "DELETE FROM liqour_categories WHERE liqour_category_id = ?";
     } else {
-        // Soft delete
-        $sqlDel = "UPDATE liqour_categories SET is_active = 0 WHERE liqour_category_id = ?";
+        $sql = "UPDATE liqour_categories SET is_active = 0 WHERE liqour_category_id = ?";
     }
 
-    $stmtDel = $conn->prepare($sqlDel);
-    $stmtDel->bind_param('i', $cid);
+    $stmtDel = $conn->prepare($sql);
+    $stmtDel->bind_param("i", $cid);
     $stmtDel->execute();
 
     if ($stmtDel->affected_rows > 0) {
-        header("Location: ../manage-dashboard.php");
-        exit();
+        // Success
+        echo "<script>
+            alert('Category " . ($hardDelete ? "hard-deleted" : "soft-deleted") . " successfully.');
+            window.location.href = '../manage-dashboard.php';
+        </script>";
     } else {
-        echo "<p>Delete failed. <a href='../manage-dashboard.php'>Back to Dashboard</a></p>";
+        // Nothing deleted
+        echo "<script>
+            alert('Delete failed: category not found or already deleted.');
+            window.location.href = '../manage-dashboard.php';
+        </script>";
     }
-    $stmtDel->close();
 
-} else {
-    header("Location: ../manage-dashboard.php");
+    $stmtDel->close();
+} catch (mysqli_sql_exception $e) {
+    // FK constraint or other SQL error
+    $msg = addslashes($e->getMessage());
+    echo "<script>
+        alert('Cannot delete category due to dependencies or constraint violation.\\nError: $msg');
+        window.location.href = '../manage-dashboard.php';
+    </script>";
     exit();
 }
 ?>

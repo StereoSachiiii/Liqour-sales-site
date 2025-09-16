@@ -80,49 +80,14 @@ $conn->close();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Review <?= $productName ?></title>
+<link rel="stylesheet" href="css/reviews.css">
 <style>
-body {
-     background: #fff; 
-     color: #000; 
-     font-family: sans-serif; 
-     padding: 20px; 
-    }
-h2, h3 {
-     margin: 20px 0 10px; 
-     font-weight: normal; 
-    }
-form { display: flex;
-     flex-direction: column;
-     }
-label { margin: 10px 0 5px; 
-    font-size: 0.9em; 
-}
-input, textarea { padding: 6px;
-     margin-bottom: 10px;
-      font-size: 0.9em; 
-    }
-button { padding: 8px; 
-    background: #000; 
-    color: #fff; 
-    border: none; 
-    cursor: pointer;
-     font-size: 0.9em;
-     }
-.success, .error { margin: 10px 0;
-     font-size: 0.9em;
-     }
-.review-item {
-     margin-bottom: 15px; 
-}
-.reviewer { 
-    font-weight: bold; 
 
-    font-size: 0.9em; 
-}
 </style>
 </head>
 <body>
-      <img src="src\icons\icon.svg" alt="LiquorStore Logo">
+            <a href="index.php"><div class="logo-container"><img src="src\icons\icon.svg" alt="LiquorStore Logo">    </div></a>
+
 
 <h2>Review: <?= $productName ?></h2>
 

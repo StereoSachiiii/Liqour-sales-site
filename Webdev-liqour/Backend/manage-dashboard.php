@@ -54,448 +54,7 @@ $stats['deleted_liqours'] = $stmt->get_result()->fetch_assoc()['count'];
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard</title>
-<style>
-    * {
-        box-sizing: border-box;
-    }
-    
-    body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        margin: 0;
-        padding: 0;
-        background: #f8f9fa;
-        color: #333;
-        line-height: 1.6;
-    }
-    
-    .header {
-        background: #1a1a1a;
-        color: #fff;
-        padding: 1rem 1.5rem;
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .header h1 {
-        margin: 0 0 1rem 0;
-        font-size: 1.5rem;
-        font-weight: 600;
-    }
-    
-    .nav {
-        display: flex;
-        gap: 0.5rem;
-        overflow-x: auto;
-        scrollbar-width: thin;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 0.5rem;
-    }
-    
-    .nav::-webkit-scrollbar {
-        height: 4px;
-    }
-    
-    .nav::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.1);
-    }
-    
-    .nav::-webkit-scrollbar-thumb {
-        background: rgba(255,255,255,0.3);
-        border-radius: 2px;
-    }
-    
-    .nav-link {
-        color: white;
-        text-decoration: none;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        white-space: nowrap;
-        transition: background-color 0.2s;
-        font-size: 0.9rem;
-    }
-    
-    .nav-link:hover {
-        background: rgba(255,255,255,0.15);
-    }
-    
-    .main {
-        padding: 1.5rem;
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-    
-    .section {
-        margin-bottom: 2rem;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        overflow: hidden;
-    }
-    
-    .section-header {
-        padding: 1.25rem 1.5rem;
-        background: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-    
-    .section-header h2 {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #495057;
-    }
-    
-    .section-actions {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    
-    .section-content {
-        padding: 1.5rem;
-    }
-    
-    .btn {
-        background: #212529;
-        color: #fff;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 0.875rem;
-        font-weight: 500;
-        transition: all 0.2s;
-        border: 1px solid transparent;
-    }
-    
-    .btn:hover {
-        background: #343a40;
-        transform: translateY(-1px);
-    }
-    
-    .btn.search {
-        background: #17a2b8;
-    }
-    
-    .btn.search:hover {
-        background: #138496;
-    }
-    
-    .btn.soft-delete {
-        background: #ffc107;
-        color: #000;
-    }
-    
-    .btn.soft-delete:hover {
-        background: #e0a800;
-    }
-    
-    .btn.delete {
-        background: #dc3545;
-    }
-    
-    .btn.delete:hover {
-        background: #c82333;
-    }
-    
-    .btn.restore {
-        background: #28a745;
-    }
-    
-    .btn.restore:hover {
-        background: #218838;
-    }
-    
-    .btn.move {
-        background: #17a2b8;
-    }
-    
-    .btn.move:hover {
-        background: #138496;
-    }
-    
-    .table-container {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.875rem;
-        min-width: 600px;
-    }
-    
-    .table th,
-    .table td {
-        padding: 0.75rem;
-        text-align: left;
-        border-bottom: 1px solid #dee2e6;
-        vertical-align: middle;
-    }
-    
-    .table th {
-        background: #f8f9fa;
-        color: #495057;
-        font-weight: 600;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-    
-    .table tr:hover {
-        background: #f8f9fa;
-    }
-    
-    .table td {
-        max-width: 200px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    
-    .action-buttons {
-        display: flex;
-        gap: 0.25rem;
-        flex-wrap: wrap;
-        min-width: 200px;
-    }
-    
-    .stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-    }
-    
-    .stat-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 8px;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        border: 1px solid #dee2e6;
-    }
-    
-    .stat-number {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #212529;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
-    
-    .stat-label {
-        color: #6c757d;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-    
-    .alert {
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border-radius: 4px;
-    }
-    
-    .alert-success {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-    
-    .alert-error {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-    
-    .badge {
-        display: inline-block;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 500;
-        border-radius: 3px;
-    }
-    
-    .badge-active {
-        background: #d4edda;
-        color: #155724;
-    }
-    
-    .badge-inactive {
-        background: #f8d7da;
-        color: #721c24;
-    }
-    
-    .pagination-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #dee2e6;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-    
-    .pagination {
-        display: flex;
-        gap: 0.25rem;
-        align-items: center;
-    }
-    
-    .pagination .btn {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.8rem;
-        min-width: 40px;
-        text-align: center;
-    }
-    
-    .pagination .btn.active {
-        background: #007bff;
-    }
-    
-    .pagination .btn.active:hover {
-        background: #0056b3;
-    }
-    
-    .pagination .btn:disabled {
-        background: #6c757d;
-        cursor: not-allowed;
-        opacity: 0.6;
-    }
-    
-    .pagination-info {
-        font-size: 0.875rem;
-        color: #6c757d;
-    }
-    
-    /* M Respoive Styls */
-    @media (max-width: 768px) {
-        .header {
-            padding: 1rem;
-        }
-        
-        .header h1 {
-            font-size: 1.25rem;
-        }
-        
-        .main {
-            padding: 1rem;
-        }
-        
-        .section-header {
-            padding: 1rem;
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .section-actions {
-            justify-content: stretch;
-        }
-        
-        .section-actions .btn {
-            flex: 1;
-            text-align: center;
-        }
-        
-        .section-content {
-            padding: 1rem;
-        }
-        
-        .stats {
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-        }
-        
-        .stat-card {
-            padding: 1rem;
-        }
-        
-        .stat-number {
-            font-size: 1.5rem;
-        }
-        
-        .table th,
-        .table td {
-            padding: 0.5rem;
-        }
-        
-        .action-buttons {
-            flex-direction: column;
-            min-width: 120px;
-        }
-        
-        .btn {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.8rem;
-        }
-        
-        .nav {
-            gap: 0.25rem;
-        }
-        
-        .nav-link {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.8rem;
-        }
-        
-        .pagination-container {
-            flex-direction: column;
-            align-items: stretch;
-            text-align: center;
-        }
-        
-        .pagination {
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .stats {
-            grid-template-columns: 1fr 1fr;
-        }
-        
-        .table {
-            min-width: 500px;
-        }
-        
-        .action-buttons .btn {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-        }
-        
-        .section-actions {
-            flex-direction: column;
-        }
-    }
-    
-   
-    @media print {
-        .header,
-        .action-buttons,
-        .btn,
-        .pagination-container {
-            display: none !important;
-        }
-        
-        .section {
-            break-inside: avoid;
-            box-shadow: none;
-            border: 1px solid #ddd;
-        }
-    }
-</style>
+<link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
 
@@ -511,8 +70,9 @@ $stats['deleted_liqours'] = $stmt->get_result()->fetch_assoc()['count'];
         <a href="#stock" class="nav-link">Stock</a>
         <a href="#users" class="nav-link">Users</a>
         <a href="trash.php" class="nav-link">Trash</a>
+                  <a href="../public/index.php" target="_blank" class="btn" style="background: #007bff;">🌐 Visit Site</a>
+
     </nav>
-          <a href="../public/index.php" target="_blank" class="btn" style="background: #007bff;">🌐 Visit Site</a>
 
 </header>
 
@@ -665,9 +225,15 @@ $stats['deleted_liqours'] = $stmt->get_result()->fetch_assoc()['count'];
               $total_records = $count_result->fetch_assoc()['total'];
               $total_pages = ceil($total_records / $records_per_page);
               
-              $sql = "SELECT l.*, c.name AS category_name FROM liqours l 
-                      JOIN liqour_categories c ON l.category_id = c.liqour_category_id
-                      WHERE l.is_active=1 ORDER BY l.liqour_id DESC LIMIT $records_per_page OFFSET $offset";
+             $sql = "SELECT l.*, c.name AS category_name
+        FROM liqours l
+        JOIN liqour_categories c ON l.category_id = c.liqour_category_id
+        WHERE l.is_active = 1
+          AND c.is_active = 1
+        ORDER BY l.liqour_id DESC
+        LIMIT $records_per_page OFFSET $offset";
+
+
               $res = $conn->query($sql);
               if($res && $res->num_rows>0){
                   while($row=$res->fetch_assoc()){
@@ -1049,16 +615,27 @@ $stats['deleted_liqours'] = $stmt->get_result()->fetch_assoc()['count'];
               <tbody>
               <?php
               // Get total count for pagination
-              $count_result = $conn->query("SELECT COUNT(*) as total FROM stock WHERE is_active=1");
+              $count_result = $conn->query("SELECT COUNT(*) as total 
+                              FROM stock s
+                              JOIN liqours l ON s.liqour_id=l.liqour_id
+                              JOIN warehouse w ON s.warehouse_id=w.warehouse_id
+                              WHERE s.is_active=1 
+                                AND l.is_active=1 
+                                AND w.is_active=1");
+
               $total_records = $count_result->fetch_assoc()['total'];
               $total_pages = ceil($total_records / $records_per_page);
               
               $sql = "SELECT s.*, l.name AS liqour_name, w.name AS warehouse_name 
-                      FROM stock s 
-                      JOIN liqours l ON s.liqour_id=l.liqour_id 
-                      JOIN warehouse w ON s.warehouse_id=w.warehouse_id
-                      WHERE s.is_active=1
-                      ORDER BY w.name,l.name LIMIT $records_per_page OFFSET $offset";
+        FROM stock s 
+        JOIN liqours l ON s.liqour_id=l.liqour_id 
+        JOIN warehouse w ON s.warehouse_id=w.warehouse_id
+        WHERE s.is_active=1 
+          AND l.is_active=1 
+          AND w.is_active=1
+        ORDER BY w.name,l.name 
+        LIMIT $records_per_page OFFSET $offset";
+
               $res = $conn->query($sql);
               if($res && $res->num_rows>0){
                   while($row=$res->fetch_assoc()){

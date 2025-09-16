@@ -214,7 +214,7 @@ if (!isset($_SESSION['login'], $_SESSION['userId'], $_SESSION['username'], $_SES
   <div class="section-content">
     
     <!-- Deleted Users -->
-    <h3>Deleted Users</h3>
+<h3>Deleted Users</h3>
 <div class="table-container">
   <table class="table">
     <thead>
@@ -228,35 +228,38 @@ if (!isset($_SESSION['login'], $_SESSION['userId'], $_SESSION['username'], $_SES
     </thead>
     <tbody>
       <?php
-      $sqlDeletedUsers = "SELECT * FROM users WHERE is_active=0 ORDER BY updated_at DESC";
+      // Fetch soft-deleted users
+      $sqlDeletedUsers = "SELECT id, name, email, updated_at FROM users WHERE is_active = 0 ORDER BY updated_at DESC";
       $res = $conn->query($sqlDeletedUsers);
-      if($res && $res->num_rows>0){
-        while($row = $res->fetch_assoc()){
-          $id = $row['id'];
-          $name = htmlspecialchars($row['name']);
-          $email = htmlspecialchars($row['email']);
-          $deleted = date('M d, Y', strtotime($row['updated_at']));
-          
-          echo "<tr>
-                  <td>{$id}</td>
-                  <td>{$name}</td>
-                  <td>{$email}</td>
-                  <td>{$deleted}</td>
-                  <td>
-                    <div class='action-buttons'>
-                      <a href='users/restore.php?id={$id}' onclick=\"return confirm('Restore this user?');\" class='btn restore'>Restore</a>
-                      <a href='users/delete.php?id={$id}&type=hard' onclick=\"return confirm('⚠️ PERMANENTLY DELETE this user? This action cannot be undone!');\" class='btn delete'>Delete Forever</a>
-                    </div>
-                  </td>
-                </tr>";
-        }
+
+      if ($res && $res->num_rows > 0) {
+          while ($row = $res->fetch_assoc()) {
+              $id = (int)$row['id'];
+              $name = htmlspecialchars($row['name']);
+              $email = htmlspecialchars($row['email']);
+              $deleted = !empty($row['updated_at']) ? date('M d, Y', strtotime($row['updated_at'])) : 'Unknown';
+
+              echo "<tr>
+                      <td>{$id}</td>
+                      <td>{$name}</td>
+                      <td>{$email}</td>
+                      <td>{$deleted}</td>
+                      <td>
+                        <div class='action-buttons'>
+                          <a href='users/restore.php?id={$id}' onclick=\"return confirm('Restore this user?');\" class='btn restore'>Restore</a>
+                          <a href='users/delete.php?id={$id}&type=hard' onclick=\"return confirm('⚠️ PERMANENTLY DELETE this user? This action cannot be undone!');\" class='btn delete'>Delete Forever</a>
+                        </div>
+                      </td>
+                    </tr>";
+          }
       } else {
-        echo "<tr><td colspan='5'>No deleted users found.</td></tr>";
+          echo "<tr><td colspan='5'>No deleted users found.</td></tr>";
       }
       ?>
     </tbody>
   </table>
 </div>
+
 
 
     <!-- Deleted Liquors -->
@@ -497,6 +500,66 @@ if (!isset($_SESSION['login'], $_SESSION['userId'], $_SESSION['username'], $_SES
         </tbody>
       </table>
     </div>
+
+
+ <!-- Deleted Stock Records -->
+<h3>Deleted Stock Records</h3>
+<div class="table-container">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Liquor</th>
+        <th>Warehouse</th>
+        <th>Quantity</th>
+        <th>Deleted At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php
+      $sqlDeletedStock = "SELECT s.*, l.name AS liqour_name, w.name AS warehouse_name
+                          FROM stock s
+                          JOIN liqours l ON s.liqour_id = l.liqour_id
+                          JOIN warehouse w ON s.warehouse_id = w.warehouse_id
+                          WHERE s.is_active=0
+                          ORDER BY s.updated_at DESC";
+      $res = $conn->query($sqlDeletedStock);
+      if ($res && $res->num_rows > 0) {
+          while($row = $res->fetch_assoc()){
+              $liqour_id = $row['liqour_id'];
+              $warehouse_id = $row['warehouse_id'];
+              $liqour = htmlspecialchars($row['liqour_name']);
+              $warehouse = htmlspecialchars($row['warehouse_name']);
+              $quantity = htmlspecialchars($row['quantity']);
+              $deleted = date('M d, Y', strtotime($row['updated_at']));
+
+              echo "
+              <tr>
+                  <td>{$liqour}</td>
+                  <td>{$warehouse}</td>
+                  <td>{$quantity}</td>
+                  <td>{$deleted}</td>
+                  <td>
+                      <div class='action-buttons'>
+                          <a href='stock/restore.php?liqour_id={$liqour_id}&warehouse_id={$warehouse_id}'
+                             onclick=\"return confirm('Restore this stock record?');\" 
+                             class='btn restore'>Restore</a>
+                          <a href='stock/delete.php?liqour_id={$liqour_id}&warehouse_id={$warehouse_id}&type=hard'
+                             onclick=\"return confirm('⚠️ PERMANENTLY DELETE this stock record? This action cannot be undone!');\" 
+                             class='btn delete'>Delete Forever</a>
+                      </div>
+                  </td>
+              </tr>";
+          }
+      } else {
+          echo "<tr><td colspan='5'>No deleted stock records found.</td></tr>";
+      }
+      ?>
+    </tbody>
+  </table>
+</div>
+
+
 
   </div>
 </section>

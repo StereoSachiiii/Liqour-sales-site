@@ -64,9 +64,8 @@ $conn->close();
 <body>
 
   <nav class="nav-bar">
-    <div class="logo-container">
-      <img src="src\icons\icon.svg" alt="LiquorStore Logo">
-    </div>
+          <a href="index.php"><div class="logo-container"><img src="src\icons\icon.svg" alt="LiquorStore Logo">    </div></a>
+
     <div class="nav-options-container nav-options-font">
       <div class="nav-option"><a href="index.php#wines">HOME</a></div>
       <div class="nav-option"><a href="index.php#new-arrivals">NEW ARRIVALS</a></div>

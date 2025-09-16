@@ -15,8 +15,9 @@ $sql = "SELECT o.order_id, o.status, o.total, o.created_at,
         FROM orders o
         JOIN order_items oi ON o.order_id = oi.order_id
         JOIN liqours l ON oi.liqour_id = l.liqour_id
-        WHERE o.user_id = ?
+        WHERE o.user_id = ? AND o.is_active = 1
         ORDER BY o.created_at DESC";
+
 
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
@@ -61,28 +62,29 @@ $conn->close();
 </head>
 <body>
 <!-- navbar  -->
-  <nav class="nav-bar">
-    <div class="logo-container">
-      <img src="src\icons\icon.svg" alt="LiquorStore Logo">
-    </div>
-    <div class="nav-options-container nav-options-font">
-      <div class="nav-option"><a href="index.php">HOME</a></div>
-      <div class="nav-option"><a href="index.php#new-arrivals">NEW ARRIVALS</a></div>
-      <div class="nav-option"><a href="index.php#liquor">LIQUOR</a></div>
-      <div class="nav-option"><a href="index.php#categories">CATEGORIES</a></div>
-    </div>
-    <div class="profile-search-cart">
-      <div class="profile-container">
-        <div class="profile">👤</div>
-        <div class="profile-expand">
-          <p>Welcome, <?= htmlspecialchars($_SESSION['username']) ?></p>
-          <p><a href="my-orders.php">My Orders</a></p>
-          <p><a href="feedback.php">Feedback</a></p>
-          <p><a href="Backend/logout.php">Logout</a></p>
-        </div>
+<nav class="nav-bar">
+       <a href="index.php"><div class="logo-container"><img src="src\icons\icon.svg" alt="LiquorStore Logo">    </div></a>
+
+  <div class="nav-options-container nav-options-font">
+        <div class="nav-option"><a href="index.php">HOME</a></div>
+
+    <div class="nav-option"><a href="index.php#new-arrivals">NEW ARRIVALS</a></div>
+    <div class="nav-option"><a href="index.php#liquor">LIQUOR</a></div>
+    <div class="nav-option"><a href="index.php#categories">CATEGORIES</a></div>
+  </div>
+  <div class="profile-search-cart">
+    <div class="profile-container">
+      <div class="profile">👤</div>
+      <div class="profile-expand">
+        <p>Welcome, <?= htmlspecialchars($_SESSION['username']) ?></p>
+        
+        <p><a href="profile.php">Profile</a></p>
+        <p><a href="Backend/logout.php">Logout</a></p>
       </div>
     </div>
-  </nav>
+  </div>
+</nav>
+
 
   <section class="new" id="orders-section">
     <h2 class="title-text">📦 My Orders</h2>
@@ -117,8 +119,18 @@ $conn->close();
                     <span style="background: #666; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">
                       <?= strtoupper($order['status']) ?>
                     </span>
-                  <?php endif; ?>
+                  <?php endif; ?>                  
                 </div>
+                 <?php if ($order['status'] !== 'completed'): ?>
+              <div style="margin-top: 10px; text-align: right;">
+                <a href="remove-order.php?order_id=<?= $order['order_id'] ?>"
+   onclick="if(confirm('Are you sure you want to remove this order?')) { window.location=this.href; return false; } else { return false; }"
+   style="background: #ff4444; color: white; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85em;">
+   Remove Order
+</a>
+
+        </div>
+    <?php endif; ?>
               </div>
             </div>
 

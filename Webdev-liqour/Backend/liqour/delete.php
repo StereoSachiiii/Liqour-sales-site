@@ -87,12 +87,23 @@ if ($resultCheck->num_rows > 0 && !$hardDelete) {
     renderBox("❌ Delete Blocked", "This liquor is linked to existing orders and cannot be deleted.");
 }
 
+// For soft delete, check total stock across all warehouses
+if (!$hardDelete) {
+    $stmtStock = $conn->prepare("SELECT SUM(quantity) AS total_stock FROM stock WHERE liqour_id = ?");
+    $stmtStock->bind_param("i", $lid);
+    $stmtStock->execute();
+    $resStock = $stmtStock->get_result()->fetch_assoc();
+    $totalStock = $resStock['total_stock'] ?? 0;
+
+    if ($totalStock > 0) {
+        renderBox("❌ Delete Blocked", "Cannot delete this liquor because stock is remaining.");
+    }
+}
+
 // Proceed with deletion
 if ($hardDelete) {
-    // Hard delete
     $stmtDel = $conn->prepare("DELETE FROM liqours WHERE liqour_id = ?");
 } else {
-    // Soft delete
     $stmtDel = $conn->prepare("UPDATE liqours SET is_active=0 WHERE liqour_id = ?");
 }
 

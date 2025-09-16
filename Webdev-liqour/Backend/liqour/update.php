@@ -37,21 +37,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = floatval($_POST['price']);
     $category = intval($_POST['category']);
     $desc = trim($_POST['description']);
-    $imageUrl = trim($_POST['imageUrl']);
+    
+    $imagePath = $liqour['image_url']; // keep old image by default
+
+    // Handle image upload
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $file = $_FILES['image'];
+        if ($file['error'] === UPLOAD_ERR_OK) {
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!in_array($file['type'], $allowedTypes)) {
+                $error = "Only JPG, PNG, GIF, or WEBP images are allowed.";
+            } else {
+                $uploadDir = __DIR__ . "/../../public/uploads/";
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $filename = uniqid('liqour_', true) . "." . $ext;
+                $targetPath = $uploadDir . $filename;
+
+                if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                    $imagePath = "uploads/" . $filename;
+                } else {
+                    $error = "Failed to upload image.";
+                }
+            }
+        } else {
+            $error = "File upload error.";
+        }
+    }
 
     if ($name === '' || $price <= 0 || !array_key_exists($category, $categories)) {
         $error = "Please fill all fields correctly.";
-    } else {
+    }
+
+    if (!$error) {
         $sql = "UPDATE liqours SET name=?, price=?, image_url=?, category_id=?, description=? WHERE liqour_id=?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sdsisi", $name, $price, $imageUrl, $category, $desc, $lid);
+        $stmt->bind_param("sdsisi", $name, $price, $imagePath, $category, $desc, $lid);
         if ($stmt->execute()) {
             $success = "Liquor updated successfully!";
             $liqour = [
                 'name' => $name,
                 'price' => $price,
                 'category_id' => $category,
-                'image_url' => $imageUrl,
+                'image_url' => $imagePath,
                 'description' => $desc
             ];
         } else {
@@ -97,7 +125,7 @@ body {
 }
 h2 { text-align: center; margin-bottom: 20px; }
 label { display: block; margin-top: 12px; font-weight: bold; }
-input[type=text], input[type=number], textarea, select {
+input[type=text], input[type=number], textarea, select, input[type=file] {
     width: 100%;
     padding: 10px;
     margin-top: 5px;
@@ -152,7 +180,7 @@ img.preview { max-width: 100%; height: auto; margin-top: 10px; border-radius: 6p
         <p class="success"><?= htmlspecialchars($success) ?></p>
     <?php endif; ?>
 
-    <form method="POST" action="">
+    <form method="POST" action="" enctype="multipart/form-data">
         <label for="name">Name</label>
         <input type="text" name="name" value="<?= htmlspecialchars($liqour['name']) ?>" required>
 
@@ -169,9 +197,8 @@ img.preview { max-width: 100%; height: auto; margin-top: 10px; border-radius: 6p
         <label for="description">Description</label>
         <textarea name="description" rows="4"><?= htmlspecialchars($liqour['description']) ?></textarea>
 
-        <label for="imageUrl">Image URL</label>
-        <input type="text" name="imageUrl" value="<?= htmlspecialchars($liqour['image_url']) ?>">
-
+        <label for="image">Image</label>
+        <input type="file" name="image" accept="image/*">
         <?php if(!empty($liqour['image_url'])): ?>
             <img class="preview" src="<?= htmlspecialchars('../../public/'.$liqour['image_url']) ?>" alt="Preview">
         <?php endif; ?>
