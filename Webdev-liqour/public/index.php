@@ -122,11 +122,37 @@ include('../Backend/sql-config.php');
 
   <section class="new" id="liquor">
     <h2 class="title-text">🥃 Liquor</h2>
-    <div class="nav-option">
-  <input type="text" id="liquor-search" placeholder="Search liquor..." style="padding:5px 10px; border-radius:5px; border:1px solid #ccc; width:180px; margin-left:10px;">
-  <button onclick="searchLiquorAJAX()" style="padding:5px 10px; background:#8B4513; color:white; border:none; border-radius:5px; margin-left:5px;">Search</button>
+<div class="nav-filters-container" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+    <!-- Left: Search Box -->
+    <div style="flex:1;">
+        <input type="text" id="liquor-search" placeholder="Search liquor..." style="padding:5px 10px; border-radius:5px; border:1px solid #ccc; width:180px;">
+        <button onclick="searchLiquorAJAX()" style="padding:5px 10px; background:#8B4513; color:white; border:none; border-radius:5px; margin-left:5px;">Search</button>
+        <button onclick="resetLiquorSearch()" style="padding:5px 10px; background:#ccc; color:#333; border:none; border-radius:5px; margin-left:5px;">Reset</button>
+    </div>
+
+    <!-- Right: Filters -->
+    <div style="flex:1; display:flex; justify-content:flex-end; align-items:center; gap:10px;">
+        <!-- Sort -->
+        <select id="sort-select" onchange="searchLiquorAJAX()" style="padding:5px; border-radius:5px; border:1px solid #ccc;">
+            <option value="">Sort By</option>
+            <option value="price_asc">Price: Low → High</option>
+            <option value="price_desc">Price: High → Low</option>
+        </select>
+
+        <!-- Price slider -->
+        <div style="display:flex; align-items:center; gap:5px;">
+            <label>Price:</label>
+            <input type="number" id="min-price" placeholder="Min" style="width:60px; padding:3px 5px; border-radius:5px; border:1px solid #ccc;">
+            <span>-</span>
+            <input type="number" id="max-price" placeholder="Max" style="width:60px; padding:3px 5px; border-radius:5px; border:1px solid #ccc;">
+            <button onclick="searchLiquorAJAX()" style="padding:3px 8px; background:#8B4513; color:white; border:none; border-radius:5px;">Apply</button>
+        </div>
+    </div>
 </div>
 
+
+
+    <br>
     <div class="new-arrivals">
     <?php
     $sql = "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name 
@@ -364,21 +390,32 @@ function addToCart(id, name, price, img) {
     updateCartCount();
 
     showToast(`${name} added to cart 🛒`);
-}
-function searchLiquorAJAX() {
+}function searchLiquorAJAX() {
     const query = document.getElementById('liquor-search').value.trim();
-    if(!query) return;
+    const sort = document.getElementById('sort-select').value;
+    const minPrice = document.getElementById('min-price').value.trim();
+    const maxPrice = document.getElementById('max-price').value.trim();
 
-    fetch(`search-liqour.php?query=${encodeURIComponent(query)}`)
+    const params = new URLSearchParams();
+    if(query) params.append('query', query);
+    if(minPrice) params.append('minPrice', minPrice);
+    if(maxPrice) params.append('maxPrice', maxPrice);
+    if(sort) params.append('sort', sort);
+
+    fetch(`search-liqour.php?${params.toString()}`)
         .then(res => res.json())
         .then(data => {
             const container = document.querySelector('#liquor .new-arrivals');
             container.innerHTML = ''; // clear old results
-            
+
             if(data.length === 0) {
                 container.innerHTML = '<p>No products found.</p>';
                 return;
             }
+
+            // Optional: Sort client-side if not handled server-side
+            if(sort === 'price_asc') data.sort((a,b) => a.price - b.price);
+            if(sort === 'price_desc') data.sort((a,b) => b.price - a.price);
 
             data.forEach(item => {
                 const div = document.createElement('div');
@@ -392,13 +429,25 @@ function searchLiquorAJAX() {
         <button class='view-product-btn' onclick='viewProduct(${item.liqour_id})'>View Product</button>
     </div>
 `;
-
                 container.appendChild(div);
             });
         })
         .catch(err => console.error(err));
 }
 
+function resetLiquorSearch() {
+    document.getElementById('liquor-search').value = '';
+    document.getElementById('sort-select').value = '';
+    document.getElementById('min-price').value = '';
+    document.getElementById('max-price').value = '';
+    searchLiquorAJAX();
+}
+
+
+function resetLiquorSearch() {
+    document.getElementById('liquor-search').value = ''; // clear input
+    searchLiquorAJAX(); // call the same function as search
+}
 
 
 </script>
