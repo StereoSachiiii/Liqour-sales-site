@@ -2,6 +2,7 @@
 session_start();
 include("../sql-config.php");
 
+// Admin check
 if (!isset($_SESSION['userId'], $_SESSION['username'], $_SESSION['is_admin']) || $_SESSION['is_admin'] != 1) {
     header("Location: ../public/login-signup.php");
     exit();
@@ -9,49 +10,43 @@ if (!isset($_SESSION['userId'], $_SESSION['username'], $_SESSION['is_admin']) ||
 
 $records_per_page = 10;
 
-// Handle AJAX live search
+// AJAX live search
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $q = $_GET['q'] ?? '';
     $q = $conn->real_escape_string($q);
 
-    $sql = "SELECT o.order_id, o.status, o.total, o.created_at, u.name AS username
-            FROM orders o
-            JOIN users u ON o.user_id = u.id
-            WHERE o.is_active=1 AND (o.order_id LIKE '%$q%' OR u.name LIKE '%$q%' OR o.status LIKE '%$q%')
-            ORDER BY o.order_id DESC
+    $sql = "SELECT s.*, l.name AS liqour_name, w.name AS warehouse_name
+            FROM stock s
+            JOIN liqours l ON s.liqour_id = l.liqour_id
+            JOIN warehouse w ON s.warehouse_id = w.warehouse_id
+            WHERE s.is_active=1 AND (l.name LIKE '%$q%' OR w.name LIKE '%$q%')
+            ORDER BY s.updated_at DESC
             LIMIT $records_per_page";
 
     $res = $conn->query($sql);
 
     if ($res && $res->num_rows > 0) {
         while ($row = $res->fetch_assoc()) {
-            $id = htmlspecialchars($row['order_id']);
-            $user = htmlspecialchars($row['username']);
-            $status = htmlspecialchars(ucfirst($row['status']));
-            $total = number_format($row['total'], 2);
-            $created = htmlspecialchars($row['created_at']);
-            $badgeClass = match(strtolower($row['status'])) {
-                'pending' => 'badge-inactive',
-                'processing' => 'badge-warning',
-                'completed' => 'badge-active',
-                'cancelled' => 'badge-cancelled',
-                default => 'badge-inactive'
-            };
-
+            $liqour = htmlspecialchars($row['liqour_name']);
+            $warehouse = htmlspecialchars($row['warehouse_name']);
+            $quantity = htmlspecialchars($row['quantity']);
+            $status = $row['is_active'] ? 'Active' : 'Inactive';
+            $badgeClass = $row['is_active'] ? 'badge-active' : 'badge-inactive';
+            $updated = htmlspecialchars($row['updated_at']);
             echo "<tr>
-                    <td>{$id}</td>
-                    <td>{$user}</td>
+                    <td>{$liqour}</td>
+                    <td>{$warehouse}</td>
+                    <td>{$quantity}</td>
                     <td><span class='badge {$badgeClass}'>{$status}</span></td>
-                    <td>\${$total}</td>
-                    <td>{$created}</td>
+                    <td>{$updated}</td>
                     <td>
-                        <a href='delete-order.php?id={$id}&type=soft' onclick=\"return confirm('Soft delete this order?');\" class='btn soft-delete'>Soft Delete</a>
-                        <a href='delete-order.php?id={$id}&type=hard' onclick=\"return confirm('Permanently delete this order?');\" class='btn delete'>Delete Forever</a>
+                        <a href='delete.php?liqour_id={$row['liqour_id']}&warehouse_id={$row['warehouse_id']}&type=soft' onclick=\"return confirm('Soft delete this stock?');\" class='btn soft-delete'>Soft Delete</a>
+                        <a href='delete.php?liqour_id={$row['liqour_id']}&warehouse_id={$row['warehouse_id']}&type=hard' onclick=\"return confirm('Permanently delete this stock?');\" class='btn delete'>Delete Forever</a>
                     </td>
                   </tr>";
         }
     } else {
-        echo "<tr><td colspan='6'>No orders found</td></tr>";
+        echo "<tr><td colspan='6'>No stock found</td></tr>";
     }
     exit;
 }
@@ -62,7 +57,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Search Orders</title>
+<title>Stock Management</title>
 <link rel="stylesheet" href="../css/index.css">
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <style>
@@ -77,75 +72,88 @@ body { font-family:'Inter',sans-serif; background:#f8f9fa; margin:0; padding:20p
 .table th, .table td { padding:0.75rem 0.5rem; text-align:left; border-bottom:1px solid #dee2e6; }
 .badge { padding:4px 8px; border-radius:4px; font-size:0.85em; color:white; }
 .badge-active { background:#4CAF50; }
-.badge-warning { background:#FF9800; }
 .badge-inactive { background:#777; }
-.badge-cancelled { background:#E53E3E; }
 .btn { padding:5px 10px; border-radius:6px; margin-right:5px; text-decoration:none; background:#212529;color:#fff; font-size:0.85em; display:inline-block; transition:all 0.2s; }
 .btn:hover { background:#343a40; }
 .soft-delete { background:#FF9800; }
 .soft-delete:hover { background:#e07b00; }
 .delete { background:#E53E3E; }
 .delete:hover { background:#c53030; }
+
+/* Responsive table for mobile */
+@media screen and (max-width: 768px) {
+    .table th, .table td { padding: 0.5rem; font-size: 0.9rem; }
+    .search-box { width: 100%; }
+}
 </style>
 </head>
 <body>
 
 <div class="container">
+    <a href="../manage-dashboard.php" 
+   style="
+      display:inline-block;
+      padding:8px 16px;
+      background-color:#B0B0B0; 
+      color:#fff; 
+      text-decoration:none; 
+      border-radius:6px; 
+      font-size:0.9rem; 
+      transition: background 0.2s;
+   " 
+   onmouseover="this.style.backgroundColor='#999999';" 
+   onmouseout="this.style.backgroundColor='#B0B0B0';">
+   Back to Dashboard
+</a>
+
     <div class="section-header">
-        <h2>Orders</h2>
-        <input type="text" id="search-input" class="search-box" placeholder="Search by Order ID, User, or Status...">
+        <h2>Stock</h2>
+        <input type="text" id="search-input" class="search-box" placeholder="Search by liquor or warehouse...">
     </div>
 
     <div class="table-container">
-        <table class="table" id="orders-table">
+        <table class="table" id="stock-table">
             <thead>
                 <tr>
-                    <th>Order ID</th>
-                    <th>User</th>
+                    <th>Liquor</th>
+                    <th>Warehouse</th>
+                    <th>Quantity</th>
                     <th>Status</th>
-                    <th>Total</th>
-                    <th>Created At</th>
+                    <th>Updated At</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php
-                $res = $conn->query("SELECT o.order_id, o.status, o.total, o.created_at, u.name AS username
-                                     FROM orders o
-                                     JOIN users u ON o.user_id = u.id
-                                     WHERE o.is_active=1
-                                     ORDER BY o.order_id DESC
+                $res = $conn->query("SELECT s.*, l.name AS liqour_name, w.name AS warehouse_name
+                                     FROM stock s
+                                     JOIN liqours l ON s.liqour_id = l.liqour_id
+                                     JOIN warehouse w ON s.warehouse_id = w.warehouse_id
+                                     WHERE s.is_active=1
+                                     ORDER BY s.updated_at DESC
                                      LIMIT $records_per_page");
                 if ($res && $res->num_rows > 0) {
                     while ($row = $res->fetch_assoc()) {
-                        $id = htmlspecialchars($row['order_id']);
-                        $user = htmlspecialchars($row['username']);
-                        $status = htmlspecialchars(ucfirst($row['status']));
-                        $total = number_format($row['total'], 2);
-                        $created = htmlspecialchars($row['created_at']);
-                        $badgeClass = match(strtolower($row['status'])) {
-                            'pending' => 'badge-inactive',
-                            'processing' => 'badge-warning',
-                            'completed' => 'badge-active',
-                            'cancelled' => 'badge-cancelled',
-                            default => 'badge-inactive'
-                        };echo "<tr>
-        <td>{$id}</td>
-        <td>{$user}</td>
-        <td><span class='badge {$badgeClass}'>{$status}</span></td>
-        <td>\${$total}</td>
-        <td>{$created}</td>
-        <td>
-            <a href='view-order.php?id={$id}' class='btn'>View</a>
-            <a href='update-order.php?id={$id}' class='btn'>Update</a>
-            <a href='delete-order.php?id={$id}&type=soft' onclick=\"return confirm('Soft delete this order?');\" class='btn soft-delete'>Soft Delete</a>
-            <a href='delete-order.php?id={$id}&type=hard' onclick=\"return confirm('Permanently delete this order?');\" class='btn delete'>Delete Forever</a>
-        </td>
-      </tr>";
-
+                        $liqour = htmlspecialchars($row['liqour_name']);
+                        $warehouse = htmlspecialchars($row['warehouse_name']);
+                        $quantity = htmlspecialchars($row['quantity']);
+                        $status = $row['is_active'] ? 'Active' : 'Inactive';
+                        $badgeClass = $row['is_active'] ? 'badge-active' : 'badge-inactive';
+                        $updated = htmlspecialchars($row['updated_at']);
+                        echo "<tr>
+                                <td>{$liqour}</td>
+                                <td>{$warehouse}</td>
+                                <td>{$quantity}</td>
+                                <td><span class='badge {$badgeClass}'>{$status}</span></td>
+                                <td>{$updated}</td>
+                                <td>
+                                    <a href='delete.php?liqour_id={$row['liqour_id']}&warehouse_id={$row['warehouse_id']}&type=soft' onclick=\"return confirm('Soft delete this stock?');\" class='btn soft-delete'>Soft Delete</a>
+                                    <a href='delete.php?liqour_id={$row['liqour_id']}&warehouse_id={$row['warehouse_id']}&type=hard' onclick=\"return confirm('Permanently delete this stock?');\" class='btn delete'>Delete Forever</a>
+                                </td>
+                              </tr>";
                     }
                 } else {
-                    echo "<tr><td colspan='6'>No orders found</td></tr>";
+                    echo "<tr><td colspan='6'>No stock found</td></tr>";
                 }
                 ?>
             </tbody>
@@ -161,8 +169,8 @@ $(document).ready(function(){
         clearTimeout(ajaxTimeout);
         ajaxTimeout = setTimeout(() => {
             let query = $(this).val().trim();
-            $.get('search.php', { ajax: 1, q: query }, function(data){
-                $('#orders-table tbody').html(data);
+            $.get('stock.php', { ajax: 1, q: query }, function(data){
+                $('#stock-table tbody').html(data);
             });
         }, 300);
     });

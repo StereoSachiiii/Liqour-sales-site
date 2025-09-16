@@ -38,9 +38,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
                     <td>\${$price}</td>
                     <td><span class='badge {$badgeClass}'>{$status}</span></td>
                     <td>
-                        <a href='update-liqour.php?id={$id}' class='btn'>Update</a>
-                        <a href='delete-liqour.php?id={$id}&type=soft' onclick=\"return confirm('Soft delete this liqour?');\" class='btn soft-delete'>Soft Delete</a>
-                        <a href='delete-liqour.php?id={$id}&type=hard' onclick=\"return confirm('Permanently delete this liqour?');\" class='btn delete'>Delete Forever</a>
+                        <a href='update.php?id={$id}' class='btn'>Update</a>
+                        <a href='delete.php?id={$id}&type=soft' onclick=\"return confirm('Soft delete this liqour?');\" class='btn soft-delete'>Soft Delete</a>
+                        <a href='delete.php?id={$id}&type=hard' onclick=\"return confirm('Permanently delete this liqour?');\" class='btn delete'>Delete Forever</a>
                     </td>
                   </tr>";
         }
@@ -83,6 +83,22 @@ body { font-family:'Inter',sans-serif; background:#f8f9fa; margin:0; padding:20p
 <body>
 
 <div class="container">
+    <a href="../manage-dashboard.php" 
+   style="
+      display:inline-block;
+      padding:8px 16px;
+      background-color:#B0B0B0; 
+      color:#fff; 
+      text-decoration:none; 
+      border-radius:6px; 
+      font-size:0.9rem; 
+      transition: background 0.2s;
+   " 
+   onmouseover="this.style.backgroundColor='#999999';" 
+   onmouseout="this.style.backgroundColor='#B0B0B0';">
+   Back to Dashboard
+</a>
+
     <div class="section-header">
         <h2>Liquors</h2>
         <input type="text" id="search-input" class="search-box" placeholder="Search liquors...">
@@ -123,9 +139,9 @@ body { font-family:'Inter',sans-serif; background:#f8f9fa; margin:0; padding:20p
                                 <td>\${$price}</td>
                                 <td><span class='badge {$badgeClass}'>{$status}</span></td>
                                 <td>
-                                    <a href='update-liqour.php?id={$id}' class='btn'>Update</a>
-                                    <a href='delete-liqour.php?id={$id}&type=soft' onclick=\"return confirm('Soft delete this liqour?');\" class='btn soft-delete'>Soft Delete</a>
-                                    <a href='delete-liqour.php?id={$id}&type=hard' onclick=\"return confirm('Permanently delete this liqour?');\" class='btn delete'>Delete Forever</a>
+                                    <a href='update.php?id={$id}' class='btn'>Update</a>
+                                    <a href='delete.php?id={$id}&type=soft' onclick=\"return confirm('Soft delete this liqour?');\" class='btn soft-delete'>Soft Delete</a>
+                                    <a href='delete.php?id={$id}&type=hard' onclick=\"return confirm('Permanently delete this liqour?');\" class='btn delete'>Delete Forever</a>
                                 </td>
                               </tr>";
                     }
