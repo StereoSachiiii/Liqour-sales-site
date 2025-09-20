@@ -12,8 +12,11 @@ if (!isset($_SESSION['login'], $_SESSION['userId'], $_SESSION['username'], $_SES
 $liqourId = $_GET['liqour_id'] ?? null;
 $warehouseId = $_GET['warehouse_id'] ?? null;
 $type = $_GET['type'] ?? 'soft'; // default soft delete
+$restore = isset($_GET['restore']) && $_GET['restore'] == 1;
 
-if (!$liqourId || !$warehouseId) die("Missing liquor or warehouse ID.");
+if (!$liqourId || !$warehouseId) {
+    die("Missing liquor or warehouse ID.");
+}
 
 // Fetch stock record
 $stmt = $conn->prepare("
@@ -26,81 +29,161 @@ $stmt = $conn->prepare("
 $stmt->bind_param("ii", $liqourId, $warehouseId);
 $stmt->execute();
 $stock = $stmt->get_result()->fetch_assoc();
-if (!$stock) die("Stock record not found.");
+$stmt->close();
 
-$error = "";
+if (!$stock) {
+    die("Stock record not found.");
+}
 
-// Handle POST
+// Helper: render consistent message box
+function renderBox($title, $msg, $backLink = "../manage-dashboard.php#stock") {
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title><?= htmlspecialchars($title) ?></title>
+        <style>
+            body { font-family: Arial, sans-serif; background:#f4f4f4; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; padding:1rem; }
+            .box { background:white; padding:2rem; border-radius:12px; border:1px solid #ccc; max-width:500px; width:100%; text-align:center; }
+            h2 { margin-bottom:1rem; }
+            p { margin-bottom:1.5rem; }
+            table { width:100%; border-collapse: collapse; margin-bottom:15px; }
+            th, td { border:1px solid #ccc; padding:8px; text-align:left; }
+            th { background:#eee; }
+            a.btn { display:inline-block; padding:0.75rem 1.25rem; background:#212529; color:white; text-decoration:none; border-radius:6px; margin:0.25rem; }
+            a.btn:hover { background:#343a40; }
+            a.btn-danger { background:#dc3545; }
+            a.btn-danger:hover { background:#c82333; }
+            a.btn-success { background:#28a745; }
+            a.btn-success:hover { background:#218838; }
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <h2><?= htmlspecialchars($title) ?></h2>
+            <p><?= htmlspecialchars($msg) ?></p>
+            <a href="<?= $backLink ?>" class="btn">Back to Stock</a>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+
+// RESTORE functionality
+if ($restore) {
+    if ($stock['is_active']) {
+        renderBox("⚠️ Already Active", "This stock record is already active and cannot be restored.");
+    }
+
+    $stmtRestore = $conn->prepare("UPDATE stock SET is_active=1, updated_at=NOW() WHERE liqour_id=? AND warehouse_id=?");
+    $stmtRestore->bind_param("ii", $liqourId, $warehouseId);
+    $stmtRestore->execute();
+    $stmtRestore->close();
+
+    renderBox("✅ Restored", "Stock for '{$stock['liqour_name']}' in '{$stock['warehouse_name']}' has been restored.");
+}
+
+// Already soft-deleted confirmation
+if (!$stock['is_active'] && !$restore) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Already Soft Deleted</title>
+        <style>
+            body { font-family: Arial, sans-serif; background:#f4f4f4; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; padding:1rem; }
+            .box { background:white; padding:2rem; border-radius:12px; border:1px solid #ccc; max-width:600px; width:100%; text-align:center; }
+            a.btn { display:inline-block; padding:0.75rem 1.25rem; background:#212529; color:white; text-decoration:none; border-radius:6px; margin:0.25rem; }
+            a.btn:hover { background:#343a40; }
+            a.btn-success { background:#28a745; }
+            a.btn-success:hover { background:#218838; }
+            a.btn-danger { background:#dc3545; }
+            a.btn-danger:hover { background:#c82333; }
+            table { width:100%; border-collapse: collapse; margin-bottom:15px; }
+            th, td { border:1px solid #ccc; padding:8px; text-align:left; }
+            th { background:#eee; }
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <h2>⚠️ Already Soft Deleted</h2>
+            <p>Stock for '<strong><?= htmlspecialchars($stock['liqour_name']) ?></strong>' in '<strong><?= htmlspecialchars($stock['warehouse_name']) ?></strong>' is already inactive.</p>
+            <table>
+                <tr><th>Liquor</th><td><?= htmlspecialchars($stock['liqour_name']) ?></td></tr>
+                <tr><th>Warehouse</th><td><?= htmlspecialchars($stock['warehouse_name']) ?></td></tr>
+                <tr><th>Quantity</th><td><?= $stock['quantity'] ?></td></tr>
+                <tr><th>Status</th><td><?= $stock['is_active'] ? 'Active' : 'Inactive' ?></td></tr>
+            </table>
+            <p>Actions you can take:</p>
+            <a class="btn btn-success" href="?liqour_id=<?= $liqourId ?>&warehouse_id=<?= $warehouseId ?>&restore=1">🔄 Restore Stock</a>
+            <a class="btn btn-danger" href="?liqour_id=<?= $liqourId ?>&warehouse_id=<?= $warehouseId ?>&type=hard" 
+               onclick="return confirm('⚠️ PERMANENT DELETE\\nThis will permanently delete the stock and cannot be undone!\\nAre you sure?')">
+               🗑️ Delete Permanently
+            </a>
+            <a class="btn" href="../manage-dashboard.php#stock">← Back to Stock</a>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+
+// Confirmation form for soft/hard delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($_POST['confirm'] === 'yes') {
         if ($type === 'hard') {
-            $deleteStmt = $conn->prepare("DELETE FROM stock WHERE liqour_id=? AND warehouse_id=?");
-            $deleteStmt->bind_param("ii", $liqourId, $warehouseId);
-            $success = $deleteStmt->execute() ? "Stock permanently deleted." : "Error deleting stock.";
+            $stmtDel = $conn->prepare("DELETE FROM stock WHERE liqour_id=? AND warehouse_id=?");
         } else {
-            $softStmt = $conn->prepare("UPDATE stock SET is_active=0, updated_at=NOW() WHERE liqour_id=? AND warehouse_id=?");
-            $softStmt->bind_param("ii", $liqourId, $warehouseId);
-            $success = $softStmt->execute() ? "Stock soft-deleted successfully." : "Error deleting stock.";
+            $stmtDel = $conn->prepare("UPDATE stock SET is_active=0, updated_at=NOW() WHERE liqour_id=? AND warehouse_id=?");
         }
-        header("Location: ../manage-dashboard.php#stock&msg=" . urlencode($success));
-        exit();
+        $stmtDel->bind_param("ii", $liqourId, $warehouseId);
+        $stmtDel->execute();
+        $stmtDel->close();
+
+        renderBox($type === 'hard' ? "✅ Permanently Deleted" : "✅ Soft Deleted",
+                  $type === 'hard' ? "Stock has been permanently deleted." : "Stock has been soft-deleted. It can be restored later.");
     } else {
-        header("Location: ../manage-dashboard.php#stock&msg=" . urlencode("Stock deletion cancelled"));
-        exit();
+        renderBox("❌ Cancelled", "Stock deletion cancelled.");
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Delete Stock</title>
+<title>Confirm <?= ucfirst($type) ?> Deletion</title>
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #f4f4f4;
-    margin: 0; padding: 20px;
-    display: flex; justify-content: center;
-}
-.container {
-    background: #fff; padding: 25px; border-radius: 8px;
-    max-width: 450px; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    text-align: center;
-}
-h2 {margin-bottom: 20px;}
-.info {
-    margin-bottom: 15px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    background: #f9f9f9;
-    border-radius: 4px;
-}
-.actions {margin-top: 20px;}
-button {
-    padding: 10px 20px; margin: 0 5px; border: none; border-radius: 4px;
-    cursor: pointer; font-weight: bold; transition: background 0.3s;
-}
-.confirm {background: #c0392b; color: #fff;}
-.confirm:hover {background: #a93226;}
-.cancel {background: #666; color: #fff;}
-.cancel:hover {background: #444;}
-.error {color: #dc3545; margin-top: 15px;}
-@media(max-width:500px){
-    .container {padding: 15px;}
-    button {padding: 8px 12px; margin: 5px 0; width: 45%;}
-}
+body { font-family: Arial, sans-serif; background: #f4f4f4; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; padding:1rem; }
+.container { background:#fff; padding:2rem; border-radius:12px; max-width:500px; width:100%; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+h2 { margin-bottom:1rem; }
+table { width:100%; border-collapse:collapse; margin-bottom:15px; }
+th, td { border:1px solid #ccc; padding:8px; text-align:left; }
+th { background:#eee; }
+.actions {margin-top:20px;}
+button { padding:10px 20px; margin:5px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; transition:all 0.2s;}
+.confirm {background:#c0392b; color:#fff;}
+.confirm:hover {background:#a93226;}
+.cancel {background:#666; color:#fff;}
+.cancel:hover {background:#444;}
+@media(max-width:500px){ button { width:45%; margin:5px 0; } }
 </style>
 </head>
 <body>
 <div class="container">
     <h2>Confirm <?= ucfirst($type) ?> Deletion</h2>
-    <div class="info">
-        <strong>Liquor:</strong> <?= htmlspecialchars($stock['liqour_name']) ?><br>
-        <strong>Warehouse:</strong> <?= htmlspecialchars($stock['warehouse_name']) ?><br>
-        <strong>Quantity:</strong> <?= htmlspecialchars($stock['quantity']) ?><br>
-        <strong>Status:</strong> <?= $stock['is_active'] ? 'Active' : 'Inactive' ?>
-    </div>
+    <table>
+        <tr><th>Liquor</th><td><?= htmlspecialchars($stock['liqour_name']) ?></td></tr>
+        <tr><th>Warehouse</th><td><?= htmlspecialchars($stock['warehouse_name']) ?></td></tr>
+        <tr><th>Quantity</th><td><?= $stock['quantity'] ?></td></tr>
+        <tr><th>Status</th><td><?= $stock['is_active'] ? 'Active' : 'Inactive' ?></td></tr>
+    </table>
     <p>Are you sure you want to <strong><?= $type === 'hard' ? 'permanently delete' : 'soft delete' ?></strong> this stock record?</p>
     <form method="post">
         <div class="actions">
@@ -108,7 +191,6 @@ button {
             <button type="submit" name="confirm" value="no" class="cancel">Cancel</button>
         </div>
     </form>
-    <?php if($error): ?><div class="error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
 </div>
 </body>
 </html>

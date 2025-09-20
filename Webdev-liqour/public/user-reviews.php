@@ -36,7 +36,8 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
     $rating = intval($_POST['rating']);
     $comment = trim($_POST['comment']);
 
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM reviews WHERE user_id=? AND liqour_id=?");
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM reviews WHERE user_id = ? AND liqour_id = ? AND is_active = 1");
+
     $stmt->bind_param("ii", $userId, $liqourId);
     $stmt->execute();
     $stmt->bind_result($existingCount);
@@ -62,7 +63,7 @@ $result = $conn->query("
     SELECT r.rating, r.comment, u.name 
     FROM reviews r 
     JOIN users u ON r.user_id = u.id
-    WHERE r.liqour_id = $liqourId
+    WHERE r.liqour_id = $liqourId AND r.is_active = 1
     ORDER BY r.created_at DESC
 ");
 if($result){
@@ -80,13 +81,49 @@ $conn->close();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Review <?= $productName ?></title>
-<link rel="stylesheet" href="css/reviews.css">
+<link rel="stylesheet" href="css/user-reviews.css">
+<link rel="stylesheet" href="css/index.css">
 <style>
 
 </style>
 </head>
-<body>
-            <a href="index.php"><div class="logo-container"><img src="src\icons\icon.svg" alt="LiquorStore Logo">    </div></a>
+<body> 
+<!-- Navbar Start -->
+<nav class="nav-bar">
+    <a href="index.php" class="logo-container">
+        <img src="src/icons/icon.svg" alt="LiquorStore Logo">
+    </a>
+
+    <div class="nav-options-container">
+        <div class="nav-option"><a href="index.php">HOME</a></div>
+        <div class="nav-option"><a href="new-arrivals.php">NEW ARRIVALS</a></div>
+        <div class="nav-option"><a href="categories.php">CATEGORIES</a></div>
+        <div class="nav-option"><a href="my-orders.php">MY ORDERS</a></div>
+        <div class="nav-option"><a href="contact.php">CONTACT</a></div>
+    </div>
+
+    <div class="profile-search-cart">
+        <div class="profile-container">
+            <div class="profile">👤</div>
+            <div class="profile-expand">
+                <p>Hello, <?= htmlspecialchars($_SESSION['username']) ?></p>
+                <a href="profile.php">Profile</a>
+                <a href="logout.php">Logout</a>
+                <p><a href="wishlist.php">My Wishlist</a></p>
+            </div>
+        </div>
+
+        <div class="cart-container">
+            <div class="cart">🛒</div>
+            <div class="cart-count">
+                <?php 
+                    echo isset($_SESSION['cart_count']) ? intval($_SESSION['cart_count']) : 0;
+                ?>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- Navbar End -->
 
 
 <h2>Review: <?= $productName ?></h2>
@@ -117,6 +154,42 @@ $conn->close();
     </div>
 <?php endforeach; ?>
 <?php endif; ?>
+<script>
+    
+// PROFILE DROPDOWN TOGGLE
+const profileContainer = document.querySelector('.profile-container');
+const profileExpand = document.querySelector('.profile-expand');
+
+profileContainer.addEventListener('click', () => {
+    profileExpand.classList.toggle('profile-expand-active');
+});
+
+// CLOSE PROFILE DROPDOWN WHEN CLICK OUTSIDE
+document.addEventListener('click', (e) => {
+    if (!profileContainer.contains(e.target)) {
+        profileExpand.classList.remove('profile-expand-active');
+    }
+});
+
+// CART CLICK NAVIGATION
+const cartContainer = document.querySelector('.cart-container');
+cartContainer.addEventListener('click', () => {
+    window.location.href = 'cart.php'; // Replace with your cart page
+});
+
+// LOGOUT LINK
+const logoutLink = profileExpand.querySelector('a[href="logout.php"]');
+logoutLink.addEventListener('click', (e) => {
+    // Optional: confirm logout
+    if(!confirm('Are you sure you want to logout?')) e.preventDefault();
+});
+
+// MY ORDERS LINK
+const myOrdersLink = document.querySelector('.nav-option a[href="my-orders.php"]');
+myOrdersLink.addEventListener('click', () => {
+    window.location.href = 'my-orders.php';
+});
+</script>
 
 </body>
 </html>

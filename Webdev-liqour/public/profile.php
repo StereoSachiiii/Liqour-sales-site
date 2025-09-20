@@ -1,10 +1,11 @@
 <?php
-session_start();
+include('session.php');
 include("../Backend/sql-config.php");
+$loggedIn = !$isGuest;
 
 // If no session, show sign-up/login prompt
-$loggedIn = isset($_SESSION['userId'], $_SESSION['username']);
-$userId = $loggedIn ? $_SESSION['userId'] : null;
+
+
 
 // Handle AJAX edits
 if($loggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])){
@@ -186,11 +187,7 @@ if($loggedIn){
         WHERE r.user_id=$userId AND r.is_active=1
     ");
     
-    // Debug info - you can remove this after checking
-    // echo "<!-- DEBUG: Profile pic path: " . ($user['profile_pic'] ?? 'NULL') . " -->";
-    // if($user['profile_pic']) {
-    //     echo "<!-- DEBUG: File exists: " . (file_exists($user['profile_pic']) ? 'YES' : 'NO') . " -->";
-    // }
+  
 }
 ?>
 
@@ -200,122 +197,22 @@ if($loggedIn){
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Profile - LiquorStore</title>
-<link rel="stylesheet" href="css/index.css">
+
 <link rel="stylesheet" href="css/profile.css">
-<style>
-/* Circular profile picture styles */
-.profile-pic {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 4px solid #ddd;
-    transition: border-color 0.3s ease;
-    cursor: pointer;
-}
+<link rel="stylesheet" href="css/index.css">
 
-.profile-pic:hover {
-    border-color: #007bff;
-}
-
-/* Upload button styling */
-.upload-btn {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin: 10px 0;
-    transition: background-color 0.3s ease;
-}
-
-.upload-btn:hover {
-    background: #0056b3;
-}
-
-/* Review styles with delete button */
-.review {
-    background: #f8f9fa;
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-    position: relative;
-}
-
-.review-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.review-title {
-    font-weight: bold;
-    color: #333;
-}
-
-.delete-review-btn {
-    background: #dc3545;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.delete-review-btn:hover {
-    background: #c82333;
-}
-
-.review-rating {
-    color: #ffc107;
-    font-weight: bold;
-}
-
-.review-comment {
-    color: #666;
-    font-style: italic;
-    margin-top: 5px;
-}
-
-/* Default profile picture placeholder */
-.profile-pic[src*="default-user"], .profile-pic[src=""] {
-    background: #f0f0f0;
-    border: 4px dashed #ccc;
-}
-</style>
 </head>
 <body>
 
+<?php include('navbar.php') ?>
 
-  <nav class="nav-bar">
-          <a href="index.php"><div class="logo-container"><img src="src\icons\icon.svg" alt="LiquorStore Logo">    </div></a>
-
-
-<!-- profile cart -->
-    <div class="profile-search-cart">
-      <div class="profile-container">
-        <div class="profile">👤</div>
-        <div class="profile-expand">
-            <p><a href="profile.php">Profile</a></p>
-            <p><a href="#" onclick="logout()">Logout</a></p>
-            <p><a href="my-orders.php">My Orders</a></p>
-        </div>
-      </div>
-
-      <div class="search-container">
-        <div class="search-bar-expand">
-          <input type="text" id="search-box" placeholder="Search products...">
-          <button onclick="searchProducts()">Search</button>
-        </div>
-      </div>
-
-    
-  </nav>
+<!-- Back to Home Button -->
+<div style="padding: 20px 40px;">
+    <a href="index.php" class="back-to-home-btn">
+        <span class="back-arrow">←</span>
+        Back to Home
+    </a>
+</div>
 
 <div class="profile-page">
 <?php if($loggedIn): ?>
@@ -360,6 +257,8 @@ if($loggedIn){
         </div>
 
         <button class="edit-btn" id="changePasswordBtn">Change Password</button>
+        <a class="edit-btn" href="delete_account.php">DELETE ACCOUNT</a> 
+        <!-- softdelete -->
     </div>
 
 <?php else: ?>
@@ -410,7 +309,23 @@ if($loggedIn){
     </div>
 </div>
 
+<!-- LOGOUT MODAL -->
+<div id="logoutModal" class="modal">
+  <div class="modal-content">
+    <h3>Confirm Logout</h3>
+    <p>Are you sure you want to logout?</p>
+    <button class="btn-primary" onclick="logoutNow()">Yes</button>
+    <button class="btn-secondary" onclick="closeLogoutModal()">Cancel</button>
+  </div>
+</div>
+
 <script>
+
+
+
+const isGuest = <?= $isGuest ? 'true' : 'false' ?>;
+
+
 // Profile edit modal
 const modal = document.getElementById('editModal');
 const modalTitle = document.getElementById('modalTitle');
@@ -465,6 +380,12 @@ const pwCancel = document.getElementById('passwordCancel');
 
 changePwBtn?.addEventListener('click',()=>{pwModal.style.display='block';});
 pwCancel.addEventListener('click',()=>pwModal.style.display='none');
+document.addEventListener('click',(e)=>{
+    if(pwModal.style.display==='flex'&& pwModal.contains(e.target)){
+        pwModal.style.display="none"
+    }
+    
+})
 pwSave.addEventListener('click', async ()=>{
     const current = document.getElementById('currentPw').value;
     const newPw = document.getElementById('newPw').value;
@@ -594,6 +515,40 @@ profileUpload.addEventListener('change', async ()=>{
         profileUpload.value = ''; // Clear file input
     }
 });
+// Profile dropdown toggle
+const profileContainer = document.querySelector(".profile-container");
+const profileDropdown = document.querySelector(".profile-expand");
+let dropdownOpen = false;
+
+profileContainer.addEventListener("click", e => {
+    e.stopPropagation(); // prevent document click from closing immediately
+    dropdownOpen = !dropdownOpen;
+    profileDropdown.classList.toggle("profile-expand-active", dropdownOpen);
+});
+
+// Close dropdown when clicking outside
+document.addEventListener("click", () => {
+    if (dropdownOpen) {
+        dropdownOpen = false;
+        profileDropdown.classList.remove("profile-expand-active");
+    }
+});
+
+// Close dropdown on Escape key
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && dropdownOpen) {
+        dropdownOpen = false;
+        profileDropdown.classList.remove("profile-expand-active");
+    }
+});
+
+//logout
+function showLogoutModal(){ if(isGuest){ window.location.href='login-signup.php'; } else { document.getElementById('logoutModal').style.display='flex'; } }
+function closeLogoutModal(){ document.getElementById('logoutModal').style.display='none'; }
+function logoutNow(){ window.location.href="../Backend/auth/logout.php"; }
+window.addEventListener('click',(e)=>{ ['logoutModal','guest-login-modal','payment-modal'].forEach(id=>{ if(e.target===document.getElementById(id)) document.getElementById(id).style.display='none'; }); });
+
+
 </script>
 
 </body>

@@ -2,7 +2,7 @@
 $dbServer   = 'localhost';
 $dbUsername = 'root';
 $dbPassword = '';
-$dbName     = 'webdev-liqour';
+$dbName     = 'liqourstore';
 
 $conn = new mysqli($dbServer, $dbUsername, $dbPassword, $dbName);
 

@@ -27,17 +27,28 @@ function addPriceConditions(&$sql, &$types, &$params, $minPrice, $maxPrice) {
     }
 }
 
+// Base SQL with stock information (CRITICAL: This was missing!)
+function getBaseSQL() {
+    return "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name,
+                   COALESCE(SUM(s.quantity), 0) as total_stock
+            FROM liqours l
+            JOIN liqour_categories c ON l.category_id = c.liqour_category_id
+            LEFT JOIN stock s ON l.liqour_id = s.liqour_id AND s.is_active = 1
+            WHERE l.is_active = 1 AND c.is_active = 1";
+}
+
 // No query & no filter → return all active liquors
 if($query === '' && $minPrice === null && $maxPrice === null){
-    $sqlAll = "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name
-               FROM liqours l
-               JOIN liqour_categories c ON l.category_id = c.liqour_category_id
-               WHERE l.is_active = 1 AND c.is_active = 1
-               ORDER BY l.liqour_id DESC
-               LIMIT 50";
+    $sqlAll = getBaseSQL();
+    $sqlAll .= " GROUP BY l.liqour_id, l.name, l.price, l.image_url, c.name
+                 ORDER BY l.liqour_id DESC
+                 LIMIT 50";
+    
     $resAll = $conn->query($sqlAll);
     if($resAll && $resAll->num_rows > 0){
         while($row = $resAll->fetch_assoc()){
+            // Ensure total_stock is integer
+            $row['total_stock'] = (int)$row['total_stock'];
             $results[] = $row;
         }
     }
@@ -51,7 +62,11 @@ if($query === '' && $minPrice === null && $maxPrice === null){
         if(!empty($types)) $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $res = $stmt->get_result();
-        while($row = $res->fetch_assoc()) $out[] = $row;
+        while($row = $res->fetch_assoc()) {
+            // Ensure total_stock is integer
+            $row['total_stock'] = (int)$row['total_stock'];
+            $out[] = $row;
+        }
         $stmt->close();
         return $out;
     }
@@ -60,10 +75,7 @@ if($query === '' && $minPrice === null && $maxPrice === null){
 
     // Search by name
     if($filter === 'all' || $filter === 'name'){
-        $sqlName = "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name
-                    FROM liqours l
-                    JOIN liqour_categories c ON l.category_id = c.liqour_category_id
-                    WHERE l.is_active = 1 AND c.is_active = 1";
+        $sqlName = getBaseSQL(); // Use base SQL with stock info
 
         $types = '';
         $params = [];
@@ -74,6 +86,9 @@ if($query === '' && $minPrice === null && $maxPrice === null){
         }
 
         addPriceConditions($sqlName, $types, $params, $minPrice, $maxPrice);
+
+        // Add GROUP BY (CRITICAL: This was missing!)
+        $sqlName .= " GROUP BY l.liqour_id, l.name, l.price, l.image_url, c.name";
 
         // Sorting
         if($sort === 'price_asc') $sqlName .= " ORDER BY l.price ASC";
@@ -87,10 +102,7 @@ if($query === '' && $minPrice === null && $maxPrice === null){
 
     // Search by category
     if($filter === 'all' || $filter === 'category'){
-        $sqlCat = "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name
-                   FROM liqours l
-                   JOIN liqour_categories c ON l.category_id = c.liqour_category_id
-                   WHERE l.is_active = 1 AND c.is_active = 1";
+        $sqlCat = getBaseSQL(); // Use base SQL with stock info
 
         $types = '';
         $params = [];
@@ -101,6 +113,9 @@ if($query === '' && $minPrice === null && $maxPrice === null){
         }
 
         addPriceConditions($sqlCat, $types, $params, $minPrice, $maxPrice);
+
+        // Add GROUP BY (CRITICAL: This was missing!)
+        $sqlCat .= " GROUP BY l.liqour_id, l.name, l.price, l.image_url, c.name";
 
         if($sort === 'price_asc') $sqlCat .= " ORDER BY l.price ASC";
         elseif($sort === 'price_desc') $sqlCat .= " ORDER BY l.price DESC";
@@ -122,3 +137,4 @@ if($query === '' && $minPrice === null && $maxPrice === null){
 
 // Return JSON
 echo json_encode($results);
+?>

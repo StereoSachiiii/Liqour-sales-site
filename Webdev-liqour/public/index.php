@@ -1,12 +1,19 @@
 <?php
-session_start();
-if(!isset($_SESSION['userId'], $_SESSION['username'])){
-    header("Location: login-signup.php");
-    exit();
-}
-
+include('session.php');
 include('../Backend/sql-config.php');
 
+// Pagination for liquor section
+$liquorPage = isset($_GET['liquor_page']) ? (int)$_GET['liquor_page'] : 1;
+$liquorItemsPerPage = 8; // Show 8 items per page
+$liquorOffset = ($liquorPage - 1) * $liquorItemsPerPage;
+
+// Count total liquor items for pagination
+$countSql = "SELECT COUNT(*) as total FROM liqours l
+             JOIN liqour_categories c ON l.category_id = c.liqour_category_id
+             WHERE l.is_active = 1 AND c.is_active = 1";
+$countResult = $conn->query($countSql);
+$totalLiquorItems = $countResult->fetch_assoc()['total'];
+$totalLiquorPages = ceil($totalLiquorItems / $liquorItemsPerPage);
 ?>
 
 <!DOCTYPE html>
@@ -16,54 +23,24 @@ include('../Backend/sql-config.php');
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Liquor Store</title>
   <link rel="stylesheet" href="css/index.css">
+ 
 </head>
 <body>
 
-
   <div class="header-strip">Welcome to LiquorStore! Free delivery on orders over $50</div>
 
-  <nav class="nav-bar">
-          <a href="index.php"><div class="logo-container"><img src="src\icons\icon.svg" alt="LiquorStore Logo">    </div></a>
+<?php include('navbar.php') ;?>
 
-    <div class="nav-options-container nav-options-font">
-      <div class="nav-option"><a href="#new-arrivals">NEW ARRIVALS</a></div>
-      <div class="nav-option"><a href="#liquor">LIQUOR</a></div>
-      <div class="nav-option"><a href="#categories">CATEGORIES</a></div>
-    </div>
-<!-- profile cart -->
-    <div class="profile-search-cart">
-      <div class="profile-container">
-        <div class="profile">👤</div>
-        <div class="profile-expand">
-            <p><a href="profile.php">Profile</a></p>
-<p><a href="#" onclick="showLogoutModal()">Logout</a></p>
-            <p><a href="my-orders.php">My Orders</a></p>
-        </div>
-      </div>
-
-           <div class="nav-search-icon" style="cursor:pointer; margin-left:15px;" onclick="scrollToLiquorSearch()">
-  🔍
-</div>
-
-
-
-
-      <div class="cart-container cart-link">
-        <a href="cart.php"><div class="cart">🛒</div></a>
-        <div class="cartLengthDisplay cart-count">0</div>
-      </div>
-    </div>
-  </nav>
 
   <section class="feedback-socials">
     <div>
-      <a href="feedback.php">📩 Feedback</a>
+      <a href="feedback.php">📩 Take a look at our feedback!</a>
     </div>    
     <div class="social-media-links">
       <p>🌐 Follow us:</p>
-      <a href="#">FB</a>
-      <a href="#">IG</a>
-      <a href="#">X</a>
+      <a href="#">Facebook</a>
+      <a href="#">Instagram</a>
+      <a href="#">twitter</a>
     </div>
   </section>
 
@@ -92,24 +69,51 @@ include('../Backend/sql-config.php');
  
   <section class="new" id="new-arrivals">
     <h2 class="title-text">✨ New Arrivals</h2>
+    <h3> take a look at our freshly arrived items .</h3>
+    <br>
     <div class="new-arrivals">
     <?php 
-    $sql = "SELECT * FROM liqours WHERE is_active = 1 ORDER BY liqour_id DESC LIMIT 6";
+    $sql = "SELECT l.*, COALESCE(SUM(s.quantity), 0) as total_stock 
+            FROM liqours l
+            LEFT JOIN stock s ON l.liqour_id = s.liqour_id AND s.is_active = 1
+            WHERE l.is_active = 1 
+            GROUP BY l.liqour_id
+            ORDER BY l.liqour_id DESC LIMIT 6";
 
     $result = $conn->query($sql);
     if ($result && $result->num_rows > 0) {
       while ($row = $result->fetch_assoc()) {
+          $stock = (int)$row['total_stock'];
+          $stockClass = $stock === 0 ? 'out-of-stock' : ($stock <= 5 ? 'low-stock' : 'in-stock');
+          $stockText = $stock === 0 ? 'Out of Stock' : ($stock <= 5 ? "Low Stock ($stock)" : "In Stock ($stock)");
+          $cardClass = $stock === 0 ? 'new-item out-of-stock' : 'new-item';
+          
           echo "
-          <div class='new-item'>
+          <div class='$cardClass' data-product-id='{$row['liqour_id']}'>
+              <button class='wishlist-btn' onclick='toggleWishlist({$row['liqour_id']}, \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>
+                  <span class='heart'>♡</span>
+              </button>
+              <div class='stock-status $stockClass'>$stockText</div>
               <div class='image-container' style='background-image:url({$row['image_url']})'></div>
               <div class='description'>{$row['name']}</div>
-             <div class='price-add-to-cart'>
-    <div class='product-price'>$".$row['price']."</div>
-    <button class='add-to-cart-btn' onclick='addToCart(\"{$row['liqour_id']}\", \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>Add to Cart</button>
-    <button class='view-product-btn' onclick='viewProduct(".$row['liqour_id'].")'>View Product</button>
-</div>
-                              <button class='add-to-cart-btn' onclick='viewReviews(\"{$row['liqour_id']}\")' style='background:#666; margin-top:5px;'>View Reviews</button>
-
+              <div class='product-price'>\${$row['price']}</div>
+              
+              <div class='quantity-controls'>
+                  <button class='quantity-btn' onclick='updateProductQuantity({$row['liqour_id']}, -1)' " . ($stock === 0 ? 'disabled' : '') . ">-</button>
+                  <div class='quantity-display' id='qty-{$row['liqour_id']}'>1</div>
+                  <button class='quantity-btn' onclick='updateProductQuantity({$row['liqour_id']}, 1)' " . ($stock === 0 ? 'disabled' : '') . ">+</button>
+              </div>
+              
+              <div class='action-buttons'>
+                  <button class='btn-primary' onclick='addToCartWithQuantity({$row['liqour_id']}, \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\", $stock)' " . ($stock === 0 ? 'disabled' : '') . ">
+                      " . ($stock === 0 ? 'Out of Stock' : 'Add to Cart') . "
+                  </button>
+                  <button class='btn-secondary' onclick='viewProduct({$row['liqour_id']})'>View Details</button>
+                  <button class='btn-wishlist' onclick='toggleWishlist({$row['liqour_id']}, \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>
+                      ♡ Add to Wishlist
+                  </button>
+                  <button class='btn-secondary' onclick='viewReviews({$row['liqour_id']})'>Reviews</button>
+              </div>
           </div>";
       }
     } else {
@@ -122,6 +126,8 @@ include('../Backend/sql-config.php');
 
   <section class="new" id="liquor">
     <h2 class="title-text">🥃 Liquor</h2>
+    <h3> checkout all the products that we have to offer !</h3>
+    <br>
 <div class="nav-filters-container" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
     <!-- Left: Search Box -->
     <div style="flex:1;">
@@ -135,8 +141,8 @@ include('../Backend/sql-config.php');
         <!-- Sort -->
         <select id="sort-select" onchange="searchLiquorAJAX()" style="padding:5px; border-radius:5px; border:1px solid #ccc;">
             <option value="">Sort By</option>
-            <option value="price_asc">Price: Low → High</option>
-            <option value="price_desc">Price: High → Low</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
         </select>
 
         <!-- Price slider -->
@@ -150,31 +156,54 @@ include('../Backend/sql-config.php');
     </div>
 </div>
 
-
-
     <br>
-    <div class="new-arrivals">
+    <div class="new-arrivals" id="liquor-results">
     <?php
-    $sql = "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name 
-        FROM liqours l
-        JOIN liqour_categories c ON l.category_id = c.liqour_category_id
-        WHERE l.is_active = 1 AND c.is_active = 1";
+    $sql = "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name,
+            COALESCE(SUM(s.quantity), 0) as total_stock
+            FROM liqours l
+            JOIN liqour_categories c ON l.category_id = c.liqour_category_id
+            LEFT JOIN stock s ON l.liqour_id = s.liqour_id AND s.is_active = 1
+            WHERE l.is_active = 1 AND c.is_active = 1
+            GROUP BY l.liqour_id, l.name, l.price, l.image_url, c.name
+            ORDER BY l.liqour_id DESC
+            LIMIT $liquorItemsPerPage OFFSET $liquorOffset";
 
     $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
+            $stock = (int)$row['total_stock'];
+            $stockClass = $stock === 0 ? 'out-of-stock' : ($stock <= 5 ? 'low-stock' : 'in-stock');
+            $stockText = $stock === 0 ? 'Out of Stock' : ($stock <= 5 ? "Low Stock ($stock)" : "In Stock ($stock)");
+            $cardClass = $stock === 0 ? 'new-item out-of-stock' : 'new-item';
+            
             echo "
-            <div class='new-item'>
+            <div class='$cardClass' data-product-id='{$row['liqour_id']}'>
+                <button class='wishlist-btn' onclick='toggleWishlist({$row['liqour_id']}, \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>
+                    <span class='heart'>♡</span>
+                </button>
+                <div class='stock-status $stockClass'>$stockText</div>
                 <div class='image-container' style='background-image:url({$row['image_url']})'></div>
                 <div class='description'>{$row['name']} ({$row['category_name']})</div>
-                <div class='price-add-to-cart'>
-    <div class='product-price'>$".$row['price']."</div>
-    <button class='add-to-cart-btn' onclick='addToCart(\"{$row['liqour_id']}\", \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>Add to Cart</button>
-    <button class='view-product-btn' onclick='viewProduct(".$row['liqour_id'].")'>View Product</button>
-</div>
-                                  <button class='add-to-cart-btn' onclick='viewReviews(\"{$row['liqour_id']}\")' style='background:#666; margin-top:5px;'>View Reviews</button>
-
+                <div class='product-price'>\${$row['price']}</div>
+                
+                <div class='quantity-controls'>
+                    <button class='quantity-btn' onclick='updateProductQuantity({$row['liqour_id']}, -1)' " . ($stock === 0 ? 'disabled' : '') . ">-</button>
+                    <div class='quantity-display' id='qty-{$row['liqour_id']}'>1</div>
+                    <button class='quantity-btn' onclick='updateProductQuantity({$row['liqour_id']}, 1)' " . ($stock === 0 ? 'disabled' : '') . ">+</button>
+                </div>
+                
+                <div class='action-buttons'>
+                    <button class='btn-primary' onclick='addToCartWithQuantity({$row['liqour_id']}, \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\", $stock)' " . ($stock === 0 ? 'disabled' : '') . ">
+                        " . ($stock === 0 ? 'Out of Stock' : 'Add to Cart') . "
+                    </button>
+                    <button class='btn-secondary' onclick='viewProduct({$row['liqour_id']})'>View Details</button>
+                    <button class='btn-wishlist' onclick='toggleWishlist({$row['liqour_id']}, \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>
+                        ♡ Wishlist
+                    </button>
+                    <button class='btn-secondary' onclick='viewReviews({$row['liqour_id']})'>Reviews</button>
+                </div>
             </div>";
         }
     } else {
@@ -182,37 +211,113 @@ include('../Backend/sql-config.php');
     }
     ?>
     </div>
+    
+    <!-- Pagination for Liquor Section -->
+    <?php if ($totalLiquorPages > 1): ?>
+    <div class="pagination">
+        <!-- Previous Button -->
+        <?php if ($liquorPage > 1): ?>
+            <a href="?liquor_page=<?php echo $liquorPage - 1; ?>#liquor" onclick="scrollToLiquor()">« Previous</a>
+        <?php else: ?>
+            <span class="disabled">« Previous</span>
+        <?php endif; ?>
+
+        <!-- Page Numbers -->
+        <?php 
+        $startPage = max(1, $liquorPage - 2);
+        $endPage = min($totalLiquorPages, $liquorPage + 2);
+        
+        // Show first page if we're not starting from 1
+        if ($startPage > 1): ?>
+            <a href="?liquor_page=1#liquor" onclick="scrollToLiquor()">1</a>
+            <?php if ($startPage > 2): ?>
+                <span>...</span>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <!-- Page number links -->
+        <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+            <?php if ($i == $liquorPage): ?>
+                <span class="current"><?php echo $i; ?></span>
+            <?php else: ?>
+                <a href="?liquor_page=<?php echo $i; ?>#liquor" onclick="scrollToLiquor()"><?php echo $i; ?></a>
+            <?php endif; ?>
+        <?php endfor; ?>
+
+        <!-- Show last page if we're not ending at last page -->
+        <?php if ($endPage < $totalLiquorPages): ?>
+            <?php if ($endPage < $totalLiquorPages - 1): ?>
+                <span>...</span>
+            <?php endif; ?>
+            <a href="?liquor_page=<?php echo $totalLiquorPages; ?>#liquor" onclick="scrollToLiquor()"><?php echo $totalLiquorPages; ?></a>
+        <?php endif; ?>
+
+        <!-- Next Button -->
+        <?php if ($liquorPage < $totalLiquorPages): ?>
+            <a href="?liquor_page=<?php echo $liquorPage + 1; ?>#liquor" onclick="scrollToLiquor()">Next »</a>
+        <?php else: ?>
+            <span class="disabled">Next »</span>
+        <?php endif; ?>
+    </div>
+
+    <!-- Page Info -->
+    <div style="text-align: center; margin-top: 10px; color: #666; font-size: 14px;">
+        Showing <?php echo ($liquorOffset + 1); ?> to <?php echo min($liquorOffset + $liquorItemsPerPage, $totalLiquorItems); ?> of <?php echo $totalLiquorItems; ?> products
+    </div>
+    <?php endif; ?>
   </section>
 
  
   <section class="new" id="featured">
-    <h2 class="title-text">⭐ Featured (High Stock)</h2>
+    <h2 class="title-text">⭐ Featured </h2>
+    <h3> check out our hot sales items! (high in stocks)</h3>
+    <br>
     <div class="new-arrivals">
     <?php
-    $sql = "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name, SUM(s.quantity) AS total_stock
-        FROM liqours l
-        JOIN liqour_categories c ON l.category_id = c.liqour_category_id
-        LEFT JOIN stock s ON l.liqour_id = s.liqour_id AND s.is_active = 1
-        WHERE l.is_active = 1 AND c.is_active = 1
-        GROUP BY l.liqour_id, l.name, l.price, l.image_url, c.name
-        ORDER BY total_stock DESC
-        LIMIT 6";
+    $sql = "SELECT l.liqour_id, l.name, l.price, l.image_url, c.name AS category_name, 
+            COALESCE(SUM(s.quantity), 0) AS total_stock
+            FROM liqours l
+            JOIN liqour_categories c ON l.category_id = c.liqour_category_id
+            LEFT JOIN stock s ON l.liqour_id = s.liqour_id AND s.is_active = 1
+            WHERE l.is_active = 1 AND c.is_active = 1
+            GROUP BY l.liqour_id, l.name, l.price, l.image_url, c.name
+            ORDER BY total_stock DESC
+            LIMIT 6";
 
     $result = $conn->query($sql);
 
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
+            $stock = (int)$row['total_stock'];
+            $stockClass = $stock === 0 ? 'out-of-stock' : ($stock <= 5 ? 'low-stock' : 'in-stock');
+            $stockText = $stock === 0 ? 'Out of Stock' : ($stock <= 5 ? "Low Stock ($stock)" : "In Stock ($stock)");
+            $cardClass = $stock === 0 ? 'new-item out-of-stock' : 'new-item';
+            
             echo "
-            <div class='new-item'>
+            <div class='$cardClass' data-product-id='{$row['liqour_id']}'>
+                <button class='wishlist-btn' onclick='toggleWishlist({$row['liqour_id']}, \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>
+                    <span class='heart'>♡</span>
+                </button>
+                <div class='stock-status $stockClass'>$stockText</div>
                 <div class='image-container' style='background-image:url({$row['image_url']})'></div>
                 <div class='description'>{$row['name']} ({$row['category_name']})</div>
-                <div class='price-add-to-cart'>
-    <div class='product-price'>$".$row['price']."</div>
-    <button class='add-to-cart-btn' onclick='addToCart(\"{$row['liqour_id']}\", \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>Add to Cart</button>
-    <button class='view-product-btn' onclick='viewProduct(".$row['liqour_id'].")'>View Product</button>
-</div>
-                <div style='width: 100%; margin-top: 8px;'>
-                    <button class='add-to-cart-btn' onclick='viewReviews(\"{$row['liqour_id']}\")' style='background:#666; width: 100%;'>View Reviews</button>
+                <div class='product-price'>\${$row['price']}</div>
+                
+                <div class='quantity-controls'>
+                    <button class='quantity-btn' onclick='updateProductQuantity({$row['liqour_id']}, -1)' " . ($stock === 0 ? 'disabled' : '') . ">-</button>
+                    <div class='quantity-display' id='qty-{$row['liqour_id']}'>1</div>
+                    <button class='quantity-btn' onclick='updateProductQuantity({$row['liqour_id']}, 1)' " . ($stock === 0 ? 'disabled' : '') . ">+</button>
+                </div>
+                
+                <div class='action-buttons'>
+                    <button class='btn-primary' onclick='addToCartWithQuantity({$row['liqour_id']}, \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\", $stock)' " . ($stock === 0 ? 'disabled' : '') . ">
+                        " . ($stock === 0 ? 'Out of Stock' : 'Add to Cart') . "
+                    </button>
+                    <button class='btn-secondary' onclick='viewProduct({$row['liqour_id']})'>View Details</button>
+                    <button class='btn-wishlist' onclick='toggleWishlist({$row['liqour_id']}, \"{$row['name']}\", {$row['price']}, \"{$row['image_url']}\")'>
+                        ♡ Wishlist
+                    </button>
+                    <button class='btn-secondary' onclick='viewReviews({$row['liqour_id']})'>Reviews</button>
                 </div>
             </div>";
         }
@@ -225,7 +330,10 @@ include('../Backend/sql-config.php');
 
 <!-- Categories Section -->
 <section class="new" id="categories">
-    <h2 class="title-text">📦 Categories</h2>
+    <h2 class="title-text">📦 Available Categories</h2>
+    <h3> pick the category that you wish to explore</h3>
+    <br>
+    
     <div class="new-arrivals">
     <?php 
     $sql = "SELECT * FROM liqour_categories WHERE is_active=1";
@@ -272,9 +380,7 @@ include('../Backend/sql-config.php');
   </div>
 </div>
 
-  <footer class="feedback-socials" style="justify-content:center;">
-    <p>© 2025 LiquorStore. All rights reserved.</p>
-  </footer>
+<?php include('footer.php')?>
 
 <script src="js/main.js"></script>
 <script>
@@ -283,26 +389,107 @@ include('../Backend/sql-config.php');
   });
 
   const cartCountEl = document.querySelector(".cart-count");
-  const userId = "<?php echo $_SESSION['userId']; ?>";
-  let cartItems = JSON.parse(localStorage.getItem(`cartItems_${userId}`)) || [];
+const userId = "<?php echo $userId ?? 'guest_' . time(); ?>";
+const isGuest = <?php echo $isGuest ? 'true' : 'false'; ?>; 
+ let cartItems = JSON.parse(localStorage.getItem(`cartItems_${userId}`)) || [];
+ let wishlistItems = JSON.parse(localStorage.getItem(`wishlist_${userId}`)) || [];
+
+  // Product quantity tracking for each item
+  const productQuantities = {};
 
   function updateCartCount() {
     const total = cartItems.reduce((sum, item) => sum + item.quantity, 0);
     cartCountEl.textContent = total;
     cartCountEl.style.display = total > 0 ? "inline-block" : "none";
   }
-  updateCartCount();
 
-  function addToCart(id, name, price, img) {
-    const existing = cartItems.find(i => i.name === name);
-    if(existing) {
-        existing.quantity++;
+  function initializeWishlistHearts() {
+    wishlistItems.forEach(item => {
+      const heartBtn = document.querySelector(`[data-product-id="${item.id}"] .wishlist-btn .heart`);
+      const wishlistBtn = document.querySelector(`[data-product-id="${item.id}"] .wishlist-btn`);
+      if (heartBtn) {
+        heartBtn.textContent = '♥';
+        wishlistBtn.classList.add('active');
+      }
+    });
+  }
+
+  function updateProductQuantity(productId, change) {
+    const currentQty = productQuantities[productId] || 1;
+    const newQty = Math.max(1, currentQty + change);
+    productQuantities[productId] = newQty;
+    
+    const displayEl = document.getElementById(`qty-${productId}`);
+    if (displayEl) {
+      displayEl.textContent = newQty;
+    }
+  }
+
+  function addToCartWithQuantity(id, name, price, img, maxStock) {
+    const quantity = productQuantities[id] || 1;
+    
+    if (maxStock === 0) {
+      showToast(`${name} is out of stock!`);
+      return;
+    }
+
+    const existing = cartItems.find(i => i.id === id);
+    const currentInCart = existing ? existing.quantity : 0;
+    
+    if (currentInCart + quantity > maxStock) {
+      showToast(`Cannot add ${quantity} items. Only ${maxStock - currentInCart} more available.`);
+      return;
+    }
+
+    if (existing) {
+      existing.quantity += quantity;
     } else {
-        cartItems.push({id, name, price, img, quantity: 1});
+      cartItems.push({id, name, price, img, quantity});
     }
     
     localStorage.setItem(`cartItems_${userId}`, JSON.stringify(cartItems));
     updateCartCount();
+
+    showToast(`${quantity}x ${name} added to cart 🛒`);
+    
+    // Reset quantity display to 1
+    productQuantities[id] = 1;
+    document.getElementById(`qty-${id}`).textContent = '1';
+  }
+
+  function toggleWishlist(id, name, price, img) {
+    const existingIndex = wishlistItems.findIndex(i => i.id === id);
+    const heartBtn = document.querySelector(`[data-product-id="${id}"] .wishlist-btn .heart`);
+    const wishlistBtn = document.querySelector(`[data-product-id="${id}"] .wishlist-btn`);
+    
+    if (existingIndex > -1) {
+      // Remove from wishlist
+      wishlistItems.splice(existingIndex, 1);
+      if (heartBtn) {
+        heartBtn.textContent = '♡';
+        wishlistBtn.classList.remove('active');
+      }
+      showToast(`${name} removed from wishlist`);
+    } else {
+      // Add to wishlist
+      wishlistItems.push({id, name, price, img});
+      if (heartBtn) {
+        heartBtn.textContent = '♥';
+        wishlistBtn.classList.add('active');
+      }
+      showToast(`${name} added to wishlist ♥`);
+    }
+    
+    localStorage.setItem(`wishlist_${userId}`, JSON.stringify(wishlistItems));
+  }
+
+  updateCartCount();
+  
+  // Initialize wishlist hearts on page load
+  setTimeout(initializeWishlistHearts, 100);
+
+  function scrollToLiquor() {
+    document.getElementById('liquor').scrollIntoView({ behavior: 'smooth' });
   }
 
   function searchProducts(){
@@ -311,7 +498,11 @@ include('../Backend/sql-config.php');
   }
 
   function showLogoutModal() {
-    document.getElementById('logoutModal').style.display = 'flex';
+    if(isGuest) {
+        window.location.href = 'login-signup.php';
+    } else {
+        document.getElementById('logoutModal').style.display = 'flex';
+    }
 }
 
 function closeLogoutModal() {
@@ -378,19 +569,13 @@ window.addEventListener('click', (e) => {
         toast.addEventListener("transitionend", () => toast.remove());
     }, 3000);
 }
-function addToCart(id, name, price, img) {
-    const existing = cartItems.find(i => i.name === name);
-    if(existing) {
-        existing.quantity++;
-    } else {
-        cartItems.push({id, name, price, img, quantity: 1});
-    }
-    
-    localStorage.setItem(`cartItems_${userId}`, JSON.stringify(cartItems));
-    updateCartCount();
 
-    showToast(`${name} added to cart 🛒`);
-}function searchLiquorAJAX() {
+// Legacy function for backward compatibility
+function addToCart(id, name, price, img) {
+    addToCartWithQuantity(id, name, price, img, 999); // Assume high stock for legacy calls
+}
+
+function searchLiquorAJAX() {
     const query = document.getElementById('liquor-search').value.trim();
     const sort = document.getElementById('sort-select').value;
     const minPrice = document.getElementById('min-price').value.trim();
@@ -402,54 +587,165 @@ function addToCart(id, name, price, img) {
     if(maxPrice) params.append('maxPrice', maxPrice);
     if(sort) params.append('sort', sort);
 
-    fetch(`search-liqour.php?${params.toString()}`)
-        .then(res => res.json())
-        .then(data => {
-            const container = document.querySelector('#liquor .new-arrivals');
-            container.innerHTML = ''; // clear old results
+    // Add loading indicator
+    const container = document.getElementById('liquor-results');
+    container.innerHTML = '<div style="text-align:center; padding:20px;">🔍 Searching...</div>';
 
-            if(data.length === 0) {
+    fetch(`search-liqour.php?${params.toString()}`)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            container.innerHTML = ''; // clear loading message
+
+            if(!Array.isArray(data) || data.length === 0) {
                 container.innerHTML = '<p>No products found.</p>';
+                // Hide pagination when searching
+                const pagination = document.querySelector('#liquor .pagination');
+                const pageInfo = pagination ? pagination.nextElementSibling : null;
+                if(pagination) pagination.style.display = 'none';
+                if(pageInfo) pageInfo.style.display = 'none';
                 return;
             }
 
-            // Optional: Sort client-side if not handled server-side
-            if(sort === 'price_asc') data.sort((a,b) => a.price - b.price);
-            if(sort === 'price_desc') data.sort((a,b) => b.price - a.price);
-
             data.forEach(item => {
+                // Better stock handling with debugging
+                const stock = item.total_stock !== undefined ? parseInt(item.total_stock, 10) : 0;
+                
+                // Debug logging (remove in production)
+                console.log(`Product: ${item.name}, Stock raw: ${item.total_stock}, Stock parsed: ${stock}`);
+                
+                const stockClass = stock === 0 ? 'out-of-stock' : (stock <= 5 ? 'low-stock' : 'in-stock');
+                const stockText = stock === 0 ? 'Out of Stock' : (stock <= 5 ? `Low Stock (${stock})` : `In Stock (${stock})`);
+                const cardClass = stock === 0 ? 'new-item out-of-stock' : 'new-item';
+
                 const div = document.createElement('div');
-                div.className = 'new-item';
+                div.className = cardClass;
+                div.setAttribute('data-product-id', item.liqour_id);
+                
+                // Better string escaping for onclick handlers
+                const escapedName = (item.name || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                const escapedImageUrl = (item.image_url || '').replace(/"/g, '&quot;');
+                const categoryDisplay = item.category_name ? ` (${item.category_name})` : '';
+                
                 div.innerHTML = `
-    <div class='image-container' style='background-image:url(${item.image_url})'></div>
-    <div class='description'>${item.name} (${item.category_name})</div>
-    <div class='price-add-to-cart'>
-        <div class='product-price'>$${item.price}</div>
-        <button class='add-to-cart-btn' onclick='addToCart("${item.liqour_id}", "${item.name}", ${item.price}, "${item.image_url}")'>Add to Cart</button>
-        <button class='view-product-btn' onclick='viewProduct(${item.liqour_id})'>View Product</button>
-    </div>
-`;
+                    <button class='wishlist-btn' onclick='toggleWishlist(${item.liqour_id}, "${escapedName}", ${item.price}, "${escapedImageUrl}")'>
+                        <span class='heart'>♡</span>
+                    </button>
+                    <div class='stock-status ${stockClass}'>${stockText}</div>
+                    <div class='image-container' style='background-image:url(${item.image_url || 'src/product-images/default.jpg'})'></div>
+                    <div class='description'>${item.name}${categoryDisplay}</div>
+                    <div class='product-price'>$${parseFloat(item.price || 0).toFixed(2)}</div>
+                    
+                    <div class='quantity-controls'>
+                        <button class='quantity-btn' onclick='updateProductQuantity(${item.liqour_id}, -1)' ${stock === 0 ? 'disabled' : ''}>-</button>
+                        <div class='quantity-display' id='qty-${item.liqour_id}'>1</div>
+                        <button class='quantity-btn' onclick='updateProductQuantity(${item.liqour_id}, 1)' ${stock === 0 ? 'disabled' : ''}>+</button>
+                    </div>
+                    
+                    <div class='action-buttons'>
+                        <button class='btn-primary' onclick='addToCartWithQuantity(${item.liqour_id}, "${escapedName}", ${item.price}, "${escapedImageUrl}", ${stock})' ${stock === 0 ? 'disabled' : ''}>
+                            ${stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                        </button>
+                        <button class='btn-secondary' onclick='viewProduct(${item.liqour_id})'>View Details</button>
+                        <button class='btn-wishlist' onclick='toggleWishlist(${item.liqour_id}, "${escapedName}", ${item.price}, "${escapedImageUrl}")'>
+                            ♡ Wishlist
+                        </button>
+                        <button class='btn-secondary' onclick='viewReviews(${item.liqour_id})'>Reviews</button>
+                    </div>
+                `;
                 container.appendChild(div);
             });
-        })
-        .catch(err => console.error(err));
-}
 
+            // Re-initialize wishlist hearts 
+            setTimeout(initializeWishlistHearts, 100);
+
+            // Hide pagination when searching
+            const pagination = document.querySelector('#liquor .pagination');
+            const pageInfo = pagination ? pagination.nextElementSibling : null;
+            if(pagination) pagination.style.display = 'none';
+            if(pageInfo) pageInfo.style.display = 'none';
+        })
+        .catch(err => {
+            console.error('Search error:', err);
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:red;">❌ Error loading search results. Please try again.</div>';
+        });
+}
 function resetLiquorSearch() {
     document.getElementById('liquor-search').value = '';
     document.getElementById('sort-select').value = '';
     document.getElementById('min-price').value = '';
     document.getElementById('max-price').value = '';
-    searchLiquorAJAX();
+    
+    // Reload the page to show original paginated results
+    const currentParams = new URLSearchParams(window.location.search);
+    const liquorPage = currentParams.get('liquor_page') || '1';
+    window.location.href = `?liquor_page=${liquorPage}#liquor`;
 }
 
-
-function resetLiquorSearch() {
-    document.getElementById('liquor-search').value = ''; // clear input
-    searchLiquorAJAX(); // call the same function as search
+ // Add this to index.php script section
+function restoreCheckoutCart() {
+  // Check if there's a pending cart and user just logged in
+  const pendingCart = localStorage.getItem('pendingCheckoutCart');
+  const timestamp = localStorage.getItem('pendingCheckoutTimestamp');
+  
+  if (pendingCart && timestamp) {
+    const cartAge = Date.now() - parseInt(timestamp);
+    // If cart is less than 1 hour old, restore it
+    if (cartAge < 3600000) { // 1 hour in milliseconds
+      const pendingItems = JSON.parse(pendingCart);
+      
+      // Merge with existing cart (avoid duplicates)
+      pendingItems.forEach(pendingItem => {
+        const existing = cartItems.find(item => item.id === pendingItem.id);
+        if (existing) {
+          existing.quantity += pendingItem.quantity;
+        } else {
+          cartItems.push(pendingItem);
+        }
+      });
+      
+      localStorage.setItem(`cartItems_${userId}`, JSON.stringify(cartItems));
+      updateCartCount();
+      
+      // Clean up pending cart
+      localStorage.removeItem('pendingCheckoutCart');
+      localStorage.removeItem('pendingCheckoutTimestamp');
+      
+      // Show notification
+      showToast('Welcome back! Your cart has been restored.');
+      
+      // Check if they should be redirected to checkout
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('checkout') === '1') {
+        setTimeout(() => {
+          window.location.href = 'cart.php';
+        }, 1000);
+      }
+    } else {
+      // Cart is too old, clean up
+      localStorage.removeItem('pendingCheckoutCart');
+      localStorage.removeItem('pendingCheckoutTimestamp');
+    }
+  }
 }
 
+// Call this when the page loads on index.php (add at the end)
+if (!isGuest) {
+  restoreCheckoutCart();
+}
 
+// Auto-scroll to liquor section if coming from pagination
+window.addEventListener('DOMContentLoaded', function() {
+    if (window.location.hash === '#liquor') {
+        setTimeout(() => {
+            scrollToLiquor();
+        }, 100);
+    }
+});
 </script>
 
 </body>

@@ -204,7 +204,13 @@ if (!isset($_SESSION['login'], $_SESSION['userId'], $_SESSION['username'], $_SES
 
     </style>
 </head>
-<body>
+<body >
+<a class="btn restore" style="position: fixed;" href="manage-dashboard.php">
+<div>
+      Back to management
+</div>
+</a>
+
 
 
 <section id="trash" class="section">

@@ -1,0 +1,441 @@
+@import url('index.css');
+
+/* product.css - Compact Single Product Page (Compatible with index.css) */
+
+/* =================== */
+/* COMPACT SINGLE PRODUCT LAYOUT */
+/* =================== */
+
+.single-product-wrapper {
+  display: flex;
+  max-width: 1000px;
+  margin: 20px auto;
+  gap: 20px;
+  padding: 20px;
+  background: var(--surface-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light);
+  min-height: auto;
+}
+
+/* =================== */
+/* COMPACT PRODUCT IMAGE SECTION */
+/* =================== */
+
+.product-image {
+  flex: 0 0 320px;
+  position: relative;
+  max-width: 320px;
+}
+
+.product-image img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-smooth);
+}
+
+.product-image img:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Wishlist Heart Button - Smaller */
+.wishlist-heart {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: var(--shadow-sm);
+}
+
+.wishlist-heart:hover {
+  background: #ff6b6b;
+  color: var(--surface-white);
+  transform: scale(1.1);
+}
+
+.wishlist-heart.active {
+  background: #ff4757;
+  color: var(--surface-white);
+}
+
+/* Stock Badge - Smaller */
+.stock-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10;
+}
+
+.stock-badge.in-stock {
+  background: #2ed573;
+  color: var(--surface-white);
+}
+
+.stock-badge.low-stock {
+  background: #ffa502;
+  color: var(--surface-white);
+}
+
+.stock-badge.out-of-stock {
+  background: #ff4757;
+  color: var(--surface-white);
+}
+
+/* =================== */
+/* COMPACT PRODUCT DETAILS SECTION */
+/* =================== */
+
+.product-details {
+  flex: 1;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.product-details h1 {
+  font-size: 1.5em;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+/* Compact Product Information */
+.product-info {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--primary-gold);
+  min-width: 60px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  color: var(--text-primary);
+  flex: 1;
+  font-weight: 500;
+}
+
+/* Compact Price Display */
+.price-display {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: var(--primary-gold);
+  margin: 8px 0;
+}
+
+/* Compact Stock Information */
+.stock-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  padding: 10px 10px;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.stock-info.in-stock {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.stock-info.low-stock {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.stock-info.out-of-stock {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* =================== */
+/* COMPACT QUANTITY SECTION */
+/* =================== */
+
+.quantity-section {
+  margin: 20px 0;
+  padding: 15px;
+  background: var(--surface-warm);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.quantity-section h3 {
+  color: var(--primary-gold);
+  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.quantity-btn {
+  background: var(--primary-gold);
+  color: var(--surface-white);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.quantity-btn:hover:not(:disabled) {
+  background: var(--dark-gold);
+  transform: scale(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+.quantity-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.quantity-display {
+  background: var(--surface-white);
+  border: 2px solid var(--border-medium);
+  padding: 8px 12px;
+  border-radius: var(--border-radius-md);
+  min-width: 50px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+
+/* =================== */
+/* COMPACT ACTION BUTTONS */
+/* =================== */
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.btn-primary {
+  background: var(--primary-gold);
+  color: var(--surface-white);
+  border: none;
+  padding: 12px 12px;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-weight: 700;
+  flex: 2;
+  transition: var(--transition-smooth);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--dark-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(210, 140, 71, 0.3);
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-wishlist {
+  background: #e91e63;
+  color: var(--surface-white);
+  border: none;
+  padding: 10px 10px;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  flex: 1;
+  transition: var(--transition-smooth);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.btn-wishlist:hover {
+  background: #c2185b;
+  transform: translateY(-2px);
+}
+
+/* =================== */
+/* COMPACT DESCRIPTION SECTION */
+/* =================== */
+
+.description-section {
+  margin-top: 20px;
+  padding: 15px;
+  background: var(--surface-warm);
+  border-radius: var(--border-radius-md);
+  border-left: 3px solid var(--primary-gold);
+}
+
+.description-section h3 {
+  color: var(--primary-gold);
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.description-section p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+/* =================== */
+/* OUT OF STOCK OVERLAY */
+/* =================== */
+
+.out-of-stock-overlay {
+  position: relative;
+}
+
+.out-of-stock-overlay::after {
+  content: 'OUT OF STOCK';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  color: var(--surface-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 2px;
+  border-radius: var(--border-radius-md);
+}
+
+/* =================== */
+/* RESPONSIVE DESIGN */
+/* =================== */
+
+@media (max-width: 768px) {
+  .single-product-wrapper {
+    flex-direction: column;
+    margin: 15px;
+    gap: 20px;
+    padding: 15px;
+  }
+  
+  .product-image {
+    flex: none;
+    max-width: 100%;
+  }
+  
+  .product-image img {
+    height: 250px;
+  }
+  
+  .product-details h1 {
+    font-size: 1.5em;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .quantity-controls {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .single-product-wrapper {
+    margin: 10px;
+    padding: 12px;
+  }
+  
+  .product-image img {
+    height: 200px;
+  }
+  
+  .product-details h1 {
+    font-size: 1.3em;
+  }
+  
+  .price-display {
+    font-size: 1.5em;
+  }
+  
+  .info-item {
+    font-size: 13px;
+  }
+  
+  .quantity-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  
+  .btn-primary,
+  .btn-wishlist {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}

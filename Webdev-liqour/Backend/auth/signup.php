@@ -53,9 +53,12 @@ $stmt->execute();
 
 if ($stmt->affected_rows === 1) {
     session_regenerate_id(true); // secure session
+    unset($_SESSION['isGuest'], $_SESSION['guestId']);
 
     $_SESSION['username'] = $name;
     $_SESSION['userId'] = $conn->insert_id;
+        $_SESSION['isGuest'] = false;  // Explicitly set
+
     $_SESSION['signup'] = "success";
     $_SESSION['is_admin'] = false;
 

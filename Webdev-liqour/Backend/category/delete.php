@@ -14,59 +14,137 @@ if (!isset($_GET['id'])) {
 }
 
 $cid = intval($_GET['id']);
-$hardDelete = isset($_GET['hard']) && $_GET['hard'] == 1;
+$type = $_GET['type'] ?? 'soft'; // default soft delete
+$hardDelete = $type === 'hard';
 
-// Check if category has active products
-$stmtCheck = $conn->prepare("SELECT COUNT(*) FROM liqours WHERE category_id = ?");
-$stmtCheck->bind_param("i", $cid);
-$stmtCheck->execute();
-$stmtCheck->bind_result($productCount);
-$stmtCheck->fetch();
-$stmtCheck->close();
+// Fetch category info
+$stmtCat = $conn->prepare("SELECT liqour_category_id, name, is_active FROM liqour_categories WHERE liqour_category_id = ?");
+$stmtCat->bind_param("i", $cid);
+$stmtCat->execute();
+$category = $stmtCat->get_result()->fetch_assoc();
+$stmtCat->close();
 
-// Show alert if soft delete not allowed
-if ($productCount > 0 && !$hardDelete) {
+if (!$category) {
     echo "<script>
-        alert('Cannot delete category: it has active products. Use hard delete if intended.');
-        window.location.href = '../manage-dashboard.php';
+        alert('Category not found.');
+        window.location.href='../manage-dashboard.php';
     </script>";
     exit();
 }
 
-// Attempt delete
-try {
-    if ($hardDelete) {
-        $sql = "DELETE FROM liqour_categories WHERE liqour_category_id = ?";
+// Fetch all products in this category
+$stmtProd = $conn->prepare("SELECT liqour_id, name, price, is_active FROM liqours WHERE category_id = ?");
+$stmtProd->bind_param("i", $cid);
+$stmtProd->execute();
+$products = $stmtProd->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmtProd->close();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($_POST['confirm'] === 'yes') {
+        try {
+            if ($hardDelete) {
+                // Hard delete (will fail if foreign key constraints exist)
+                $stmtDel = $conn->prepare("DELETE FROM liqour_categories WHERE liqour_category_id=?");
+                $stmtDel->bind_param("i", $cid);
+                $stmtDel->execute();
+                $msg = "Category and its products permanently deleted (if allowed by DB constraints).";
+            } else {
+                // Soft delete
+                $stmtDel = $conn->prepare("UPDATE liqour_categories SET is_active=0 WHERE liqour_category_id=? AND is_active=1");
+                $stmtDel->bind_param("i", $cid);
+                $stmtDel->execute();
+
+                $stmtProdUpdate = $conn->prepare("UPDATE liqours SET is_active=0 WHERE category_id=? AND is_active=1");
+                $stmtProdUpdate->bind_param("i", $cid);
+                $stmtProdUpdate->execute();
+                $stmtProdUpdate->close();
+
+                $msg = "Category and all its products soft-deleted successfully.";
+            }
+
+            $stmtDel->close();
+
+            echo "<script>
+                alert('" . addslashes($msg) . "');
+                window.location.href='../manage-dashboard.php';
+            </script>";
+            exit();
+        } catch (mysqli_sql_exception $e) {
+            $msg = addslashes($e->getMessage());
+            echo "<script>
+                alert('Cannot delete category due to database constraints.\\nError: {$msg}');
+                window.location.href='../manage-dashboard.php';
+            </script>";
+            exit();
+        }
     } else {
-        $sql = "UPDATE liqour_categories SET is_active = 0 WHERE liqour_category_id = ?";
+        echo "<script>window.location.href='../manage-dashboard.php';</script>";
+        exit();
     }
-
-    $stmtDel = $conn->prepare($sql);
-    $stmtDel->bind_param("i", $cid);
-    $stmtDel->execute();
-
-    if ($stmtDel->affected_rows > 0) {
-        // Success
-        echo "<script>
-            alert('Category " . ($hardDelete ? "hard-deleted" : "soft-deleted") . " successfully.');
-            window.location.href = '../manage-dashboard.php';
-        </script>";
-    } else {
-        // Nothing deleted
-        echo "<script>
-            alert('Delete failed: category not found or already deleted.');
-            window.location.href = '../manage-dashboard.php';
-        </script>";
-    }
-
-    $stmtDel->close();
-} catch (mysqli_sql_exception $e) {
-    // FK constraint or other SQL error
-    $msg = addslashes($e->getMessage());
-    echo "<script>
-        alert('Cannot delete category due to dependencies or constraint violation.\\nError: $msg');
-        window.location.href = '../manage-dashboard.php';
-    </script>";
-    exit();
 }
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirm Category Deletion</title>
+<style>
+body { font-family: Arial, sans-serif; background:#f4f4f4; margin:0; padding:20px; display:flex; justify-content:center; }
+.container { background:white; padding:25px; border-radius:8px; max-width:700px; width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+h2 { margin-bottom:15px; }
+table { width:100%; border-collapse: collapse; margin-bottom:15px; }
+th, td { border:1px solid #ccc; padding:8px; text-align:left; }
+th { background:#eee; }
+.actions { text-align:center; }
+button { padding:10px 20px; margin:5px; border:none; border-radius:4px; cursor:pointer; font-weight:bold; }
+.confirm { background:#c0392b; color:white; }
+.confirm:hover { background:#a93226; }
+.cancel { background:#666; color:white; }
+.cancel:hover { background:#444; }
+.notice { margin-bottom:15px; padding:10px; background:#f9f9f9; border-radius:4px; border:1px solid #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Confirm <?= $hardDelete ? 'Hard' : 'Soft' ?> Deletion</h2>
+    <div class="notice">
+        <strong>Category:</strong> <?= htmlspecialchars($category['name']) ?><br>
+        <strong>Status:</strong> <?= $category['is_active'] ? 'Active' : 'Inactive' ?><br>
+        <strong>Products in this category:</strong> <?= count($products) ?>
+    </div>
+
+    <?php if(count($products) > 0): ?>
+    <table>
+        <tr>
+            <th>Product Name</th>
+            <th>Price</th>
+            <th>Status</th>
+        </tr>
+        <?php foreach($products as $prod): ?>
+        <tr>
+            <td><?= htmlspecialchars($prod['name']) ?></td>
+            <td>$<?= number_format($prod['price'],2) ?></td>
+            <td><?= $prod['is_active'] ? 'Active' : 'Inactive' ?></td>
+        </tr>
+        <?php endforeach; ?>
+    </table>
+    <?php endif; ?>
+
+    <p class="notice">
+        <?php if($hardDelete): ?>
+            Hard deleting this category will <strong>permanently remove</strong> it. 
+            Any products still present may cause a database error due to foreign key constraints.
+        <?php else: ?>
+            Soft deleting this category will mark it <strong>and all its products</strong> as inactive. 
+            They can be restored later.
+        <?php endif; ?>
+    </p>
+
+    <form method="post" class="actions">
+        <button type="submit" name="confirm" value="yes" class="confirm"><?= $hardDelete ? 'Delete Permanently' : 'Soft Delete' ?></button>
+        <button type="submit" name="confirm" value="no" class="cancel">Cancel</button>
+    </form>
+</div>
+</body>
+</html>
