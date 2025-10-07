@@ -1,0 +1,244 @@
+@import url('index.css'); 
+
+body {
+    background-color: #daad09;
+    color: #000000;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 1.5rem;
+}
+
+.delete-container {
+    
+    width: 100%;
+    margin: 0;
+    background-color: #f9efc4;
+    padding: 1.5rem;
+    border-radius: 0; /* Remove border-radius for full-width look */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    color: #000000;
+    box-sizing: border-box;
+    min-height: 100vh; /* Ensure container spans full viewport height */
+}
+
+/* Header styling */
+.header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.header h1 {
+    margin: 0.5rem 0;
+    color: #000000;
+    font-size: 2rem;
+}
+
+/* Data summary section */
+.data-summary, .warning-box, .confirmation-steps {
+    margin-top: 1.5rem;
+}
+
+.data-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.5rem 0;
+    font-weight: 500;
+}
+
+.data-label {
+    color: #333333; /* Slightly lighter for contrast */
+}
+
+.data-value {
+    color: #000000;
+}
+
+/* Warning box styling */
+.warning-box {
+    background: #f8f9fa; /* Light gray background for warning */
+    border-left: 5px solid #dc3545; /* Red border for emphasis */
+    padding: 1rem;
+    border-radius: 6px;
+}
+
+.warning-list {
+    padding-left: 1.2rem;
+    margin: 0;
+    color: #000000;
+}
+
+/* Step header for confirmation steps */
+.step-header {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    margin: 1rem 0 0.5rem;
+    color: #000000;
+}
+
+.step-number {
+    background: #dc3545; /* Red for emphasis */
+    color: #ffffff;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    text-align: center;
+    line-height: 24px;
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Checkbox container */
+.checkbox-container {
+    margin: 0.5rem 0;
+}
+
+.checkbox-label {
+    color: #000000;
+}
+
+/* Input group for confirmation text */
+.input-group input {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 0.3rem;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #000000;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #dc3545;
+    box-shadow: 0 0 5px rgba(220, 53, 69, 0.3);
+}
+
+input.valid {
+    border-color: #28a745; /* Green for valid input */
+}
+
+/* Progress bar styling */
+.progress-container {
+    width: 100%;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #dc3545, #c82333); /* Red gradient */
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* Buttons */
+.buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+}
+
+.btn {
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-cancel {
+    background: #6c757d; /* Gray for cancel */
+    color: #ffffff;
+}
+
+.btn-cancel:hover {
+    background: #5a6268;
+}
+
+.btn-delete {
+    background: #dc3545; /* Red for delete */
+    color: #ffffff;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-delete.enabled {
+    opacity: 1;
+    cursor: pointer;
+}
+
+.btn-delete.enabled:hover {
+    background: #c82333;
+}
+
+/* Error and success messages */
+.error-message {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.success-message {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+/* Toast notifications */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333333;
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    z-index: 9999;
+}
+
+.toast.show {
+    opacity: 1;
+}
+
+.toast.success {
+    background: #28a745;
+}
+
+.toast.error {
+    background: #dc3545;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .delete-container {
+        padding: 1rem;
+    }
+
+    .buttons {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+    }
+}

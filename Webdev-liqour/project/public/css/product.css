@@ -1,0 +1,447 @@
+@import url('index.css');
+
+body {
+  background: #faecc6; /* Light gold background */
+  color: #000000; /* Black text */
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* =================== */
+/* SINGLE PRODUCT WRAPPER */
+/* =================== */
+.single-product-wrapper {
+  display: flex;
+  max-width: 1000px;
+  margin: 20px auto;
+  gap: 20px;
+  padding: 20px;
+  background: #ffffff; /* White background */
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e0e0e0;
+  min-height: auto;
+}
+
+/* =================== */
+/* PRODUCT IMAGE */
+/* =================== */
+.product-image {
+  flex: 0 0 320px;
+  position: relative;
+  max-width: 320px;
+}
+
+.product-image img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-image img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Wishlist Heart Button - Smaller */
+.wishlist-heart {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.wishlist-heart:hover {
+  background: #FFD700; /* Gold */
+  color: #000000; /* Black text for contrast */
+  transform: scale(1.1);
+}
+
+.wishlist-heart.active {
+  background: #DAA520; /* Goldenrod */
+  color: #000000; /* Black text */
+}
+
+/* Stock Badge - Smaller */
+.stock-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10;
+  color: #ffffff; /* White text for contrast */
+}
+
+.stock-badge.in-stock {
+  background: linear-gradient(135deg, #FFD700, #DAA520); /* Gold */
+  box-shadow: 0 1px 4px rgba(218, 165, 32, 0.3);
+}
+
+.stock-badge.low-stock {
+  background: linear-gradient(135deg, #E8B923, #D4A017); /* Medium gold */
+  box-shadow: 0 1px 4px rgba(232, 185, 35, 0.3);
+}
+
+.stock-badge.out-of-stock {
+  background: linear-gradient(135deg, #A9A9A9, #8B8989); /* Muted gray-gold */
+  box-shadow: 0 1px 4px rgba(169, 169, 169, 0.3);
+}
+
+/* =================== */
+/* PRODUCT DETAILS */
+/* =================== */
+.product-details {
+  flex: 1;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.product-details h1 {
+  font-size: 1.5em;
+  color: #000000; /* Black text */
+  margin-bottom: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+/* Compact Product Information */
+.product-info {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 14px;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #FFD700; /* Gold */
+  min-width: 60px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  color: #000000; /* Black text */
+  flex: 1;
+  font-weight: 500;
+}
+
+/* Compact Price Display */
+.price-display {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: #FFD700; /* Gold */
+  margin: 8px 0;
+}
+
+/* Compact Stock Information */
+.stock-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  padding: 10px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.stock-info.in-stock {
+  background: #fef8e7; /* Pale gold */
+  color: #000000; /* Black text */
+  border: 1px solid #DAA520; /* Goldenrod */
+}
+
+.stock-info.low-stock {
+  background: #fff7d4; /* Light medium gold */
+  color: #000000; /* Black text */
+  border: 1px solid #E8B923; /* Medium gold */
+}
+
+.stock-info.out-of-stock {
+  background: #f5f5f5; /* Light gray-gold */
+  color: #000000; /* Black text */
+  border: 1px solid #A9A9A9; /* Muted gray-gold */
+}
+
+/* =================== */
+/* QUANTITY SECTION */
+/* =================== */
+.quantity-section {
+  margin: 20px 0;
+  padding: 15px;
+  background: #fef8e7; /* Pale gold */
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.quantity-section h3 {
+  color: #FFD700; /* Gold */
+  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.quantity-btn {
+  background: linear-gradient(135deg, #FFD700, #DAA520); /* Gold */
+  color: #000000; /* Black text */
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(218, 165, 32, 0.3);
+}
+
+.quantity-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #DAA520, #B8860B); /* Darker gold */
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(218, 165, 32, 0.4);
+  border: 1px solid #8B5A2B; /* Dark gold */
+}
+
+.quantity-btn:disabled {
+  background: #ccc;
+  color: #333333; /* Dark gray */
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.quantity-display {
+  background: #ffffff; /* White */
+  border: 2px solid #DAA520; /* Goldenrod */
+  padding: 8px 12px;
+  border-radius: 6px;
+  min-width: 50px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.1em;
+  color: #000000; /* Black text */
+}
+
+/* =================== */
+/* ACTION BUTTONS */
+/* =================== */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #FFD700, #DAA520); /* Gold */
+  color: #000000; /* Black text */
+  border: none;
+  padding: 12px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  flex: 2;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #DAA520, #B8860B); /* Darker gold */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(218, 165, 32, 0.3);
+  border: 1px solid #8B5A2B; /* Dark gold */
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  color: #333333; /* Dark gray */
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-wishlist {
+  background: linear-gradient(135deg, #B8860B, #8B5A2B); /* Darker gold */
+  color: #ffffff; /* White text for contrast */
+  border: none;
+  padding: 10px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex: 1;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.btn-wishlist:hover {
+  background: linear-gradient(135deg, #8B5A2B, #6B3E20); /* Even darker gold */
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(184, 134, 11, 0.3);
+}
+
+/* =================== */
+/* DESCRIPTION SECTION */
+/* =================== */
+.description-section {
+  margin-top: 20px;
+  padding: 15px;
+  background: #fef8e7; /* Pale gold */
+  border-radius: 6px;
+  border-left: 3px solid #FFD700; /* Gold */
+}
+
+.description-section h3 {
+  color: #FFD700; /* Gold */
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.description-section p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #000000; /* Black text */
+}
+
+/* =================== */
+/* OUT OF STOCK OVERLAY */
+/* =================== */
+.out-of-stock-overlay {
+  position: relative;
+}
+
+.out-of-stock-overlay::after {
+  content: 'OUT OF STOCK';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff; /* White text */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 2px;
+  border-radius: 6px;
+}
+
+/* =================== */
+/* RESPONSIVE DESIGN */
+/* =================== */
+@media (max-width: 768px) {
+  .single-product-wrapper {
+    flex-direction: column;
+    margin: 15px;
+    gap: 20px;
+    padding: 15px;
+  }
+  
+  .product-image {
+    flex: none;
+    max-width: 100%;
+  }
+  
+  .product-image img {
+    height: 250px;
+  }
+  
+  .product-details h1 {
+    font-size: 1.5em;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .quantity-controls {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .single-product-wrapper {
+    margin: 10px;
+    padding: 12px;
+  }
+  
+  .product-image img {
+    height: 200px;
+  }
+  
+  .product-details h1 {
+    font-size: 1.3em;
+  }
+  
+  .price-display {
+    font-size: 1.5em;
+  }
+  
+  .info-item {
+    font-size: 13px;
+  }
+  
+  .quantity-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  
+  .btn-primary,
+  .btn-wishlist {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
